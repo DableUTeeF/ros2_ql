@@ -28,7 +28,7 @@ from rclpy.utilities import timeout_sec_to_nsec
 
 
 # Real robot
-REAL_ROBOT = False
+REAL_ROBOT = True
 
 # Action parameter
 MIN_TIME_BETWEEN_ACTIONS = 0.0
@@ -77,6 +77,7 @@ class ControlNode(Node):
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.t_step = self.get_clock().now()
         self.robot_in_pos = False
+        self.count = 0
 
     def wait_for_message(
         node,
@@ -120,7 +121,7 @@ class ControlNode(Node):
         return (False, None)
 
     def timer_callback(self):
-        msgScan = self.wait_for_message('/scan', LaserScan)
+        _, msgScan = self.wait_for_message('/scan', LaserScan)
         _, odomMsg = self.wait_for_message('/odom', Odometry)
         step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
         if step_time > MIN_TIME_BETWEEN_ACTIONS:
@@ -160,8 +161,8 @@ class ControlNode(Node):
                     else:
                         self.robot_in_pos = False
             else:
-                count = count + 1
-                text = '\r\nStep %d , Step time %.2f s' % (count, step_time)
+                self.count = self.count + 1
+                text = '\r\nStep %d , Step time %.2f s' % (self.count, step_time)
 
                 # Get robot position and orientation
                 ( x , y ) = getPosition(odomMsg)
