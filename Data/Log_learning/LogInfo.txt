@@ -1,0 +1,38 @@
+
+TOO BIG STEP TIME: 10.15 s
+
+---------------------------------------
+
+Episode 1 ==> CRASH {0.95,0.93,91.10}    23/01/2023 05:12:42
+episode time: 73.55 s (avg step: 0.59 s) 
+episode steps: 124 
+episode reward: -111.00 
+episode max | avg | min reward: 0.40 | -0.90 | -100.00 
+T = 25.000000 
+
+---------------------------------------
+
+Episode 2 ==> CRASH {-1.27,-0.12,61.79}    23/01/2023 05:12:57
+episode time: 14.54 s (avg step: 0.54 s) 
+episode steps: 27 
+episode reward: -104.30 
+episode max | avg | min reward: 0.10 | -4.01 | -100.00 
+T = 23.750000 
+
+---------------------------------------
+
+Episode 3 ==> CRASH {0.22,-2.45,-119.53}    23/01/2023 05:14:04
+episode time: 66.99 s (avg step: 0.51 s) 
+episode steps: 132 
+episode reward: -108.90 
+episode max | avg | min reward: 0.40 | -0.83 | -100.00 
+T = 22.562500 
+
+---------------------------------------
+
+Episode 4 ==> CRASH {-1.86,-1.65,-114.89}    23/01/2023 05:14:30
+episode time: 25.53 s (avg step: 0.52 s) 
+episode steps: 49 
+episode reward: -105.30 
+episode max | avg | min reward: 0.40 | -2.19 | -100.00 
+T = 21.434375 
