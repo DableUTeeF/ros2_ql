@@ -12,8 +12,8 @@ from geometry_msgs.msg import Twist
 import sys
 cwd = os.getcwd()
 
-DATA_PATH = '/media/palm/BiggerData/superai/robot/robo_ros2/Data'
-MODULES_PATH = '/media/palm/BiggerData/superai/robot/robo_ros2/scripts'
+DATA_PATH = '/home/palm/PycharmProjects/ros2_ql/Data'
+MODULES_PATH = '/home/palm/PycharmProjects/ros2_ql/scripts'
 sys.path.insert(0, MODULES_PATH)
 
 from Qlearning import *
