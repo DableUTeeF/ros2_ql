@@ -83,35 +83,40 @@ def softMaxSelection(Q_table, state_ind, actions, T):
     if STATE_SPACE_IND_MIN <= state_ind <= STATE_SPACE_IND_MAX:
         status = 'softMaxSelection => OK'
         n_actions = len(actions)
-        P = np.zeros(n_actions)
+        P_ac = np.zeros(n_actions)
 
         # Boltzman distribution
-        P = np.exp(Q_table[state_ind,:] / T) / np.sum(np.exp(Q_table[state_ind,:] / T))
+        P_ac = np.exp(Q_table[state_ind,:] / T) / np.sum(np.exp(Q_table[state_ind,:] / T))
 
-        if T < T_MIN or np.any(np.isnan(P)):
+        if T < T_MIN or np.any(np.isnan(P_ac)):
             ( a, status_gba ) = getBestAction(Q_table, state_ind, actions)
             if status_gba == 'getBestAction => INVALID STATE INDEX':
                 status = 'softMaxSelection => INVALID STATE INDEX'
         else:
-            rnd = np.random.uniform()
+            # rnd = np.random.uniform()
             status = 'softMaxSelection => OK'
-            if P[0] > rnd:
-                a = 0
-            elif P[0] <= rnd and (P[0] + P[1]) > rnd:
-                a = 1
-            elif (P[0] + P[1]) <= rnd:
-                a = 2
-            # -- code --
-            ########
-            # 
-            # 
-            # 
-            # 
-            ########    
-            else:
+            # if P[0] > rnd:
+            #     a = 0
+            # elif P[0] <= rnd and (P[0] + P[1]) > rnd:
+            #     a = 1
+            # elif (P[0] + P[1]) <= rnd:
+            #     a = 2
+            # ######     -- code --    #########
+            # elif (P[0] + P[1] + P[2]) <= rnd:
+            #     a = 3
+
+            # elif (P[0] + P[1] + P[2] + P[3]) <= rnd:
+            #     a = 4
+
+            # elif (P[0] + P[1] + P[2] + P[3] + P[4]) <= rnd:
+            #     a = 5
+            try:
+                a = np.random.choice([0, 1, 2, 3, 4, 5], 1, p = P_ac)
+            ###################################    
+            except:
                 status = 'softMaxSelection => Boltzman distribution error => getBestAction '
-                status = status + '\r\nP = (%f , %f , %f) , rnd = %f' % (P[0],P[1],P[2],rnd)
-                status = status + '\r\nQ(%d,:) = ( %f, %f, %f) ' % (state_ind,Q_table[state_ind,0],Q_table[state_ind,1],Q_table[state_ind,2])
+                status = status + '\r\nP = (%f , %f , %f, %f, %f, %f) ' % (P_ac[0],P_ac[1],P_ac[2],P_ac[3],P_ac[4],P_ac[5])
+                status = status + '\r\nQ(%d,:) = ( %f , %f , %f, %f, %f, %f) ' % (state_ind, Q_table[state_ind,0], Q_table[state_ind,1], Q_table[state_ind,2], Q_table[state_ind,3], Q_table[state_ind,4], Q_table[state_ind,5])
                 ( a, status_gba ) = getBestAction(Q_table, state_ind, actions)
                 if status_gba == 'getBestAction => INVALID STATE INDEX':
                     status = 'softMaxSelection => INVALID STATE INDEX'

@@ -41,7 +41,7 @@ EPSILON_GRAD = 0.96
 EPSILON_MIN = 0.05
 
 # 1 - Softmax , 2 - Epsilon greedy
-EXPLORATION_FUNCTION = 2
+EXPLORATION_FUNCTION = 1
 
 # Initial position
 X_INIT = -2.0
