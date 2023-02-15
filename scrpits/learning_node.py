@@ -41,7 +41,7 @@ EPSILON_GRAD = 0.96
 EPSILON_MIN = 0.05
 
 # 1 - Softmax , 2 - Epsilon greedy
-EXPLORATION_FUNCTION = 1
+EXPLORATION_FUNCTION = 2
 
 # Initial position
 X_INIT = -2.0
@@ -55,6 +55,10 @@ LOG_FILE_DIR = DATA_PATH + '/Log_learning'
 
 # Q table source file
 Q_SOURCE_DIR = ''
+
+
+REWARD_THRESHOLD =  -200.0
+CUMULATIVE_REWARD = 0.0
 
 class LearningNode(Node):
     def __init__(self):
@@ -108,6 +112,8 @@ class LearningNode(Node):
         self.T_per_episode = np.array([])
         self.EPSILON_per_episode = np.array([])
         self.t_per_episode = np.array([])
+
+        self.CUMULATIVE_REWARD = CUMULATIVE_REWARD
     
     def log_init(self):
         # Date
@@ -292,6 +298,7 @@ class LearningNode(Node):
                         self.ep_reward_arr = np.array([])
                         self.ep_steps = 0
                         self.ep_reward = 0
+                        self.CUMULATIVE_REWARD = 0
                         self.crash = 0
                         self.robot_in_pos = False
                         self.first_action_taken = False
@@ -357,6 +364,7 @@ class LearningNode(Node):
 
                             ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
 
+                            self.CUMULATIVE_REWARD += reward
                             ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
 
                             if EXPLORATION_FUNCTION == 1:
