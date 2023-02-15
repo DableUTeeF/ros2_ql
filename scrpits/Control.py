@@ -62,6 +62,16 @@ def robotGoForward(velPub):
     velMsg = createVelMsg(CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
     velPub.publish(velMsg)
 
+# Go 2 x forward command
+def robotGoSuperForward(velPub):
+    velMsg = createVelMsg(2*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velPub.publish(velMsg)
+
+# Go backward command
+def robotGoBackward(velPub):
+    velMsg = createVelMsg(-CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velPub.publish(velMsg)
+
 # Turn left command
 def robotTurnLeft(velPub):
     velMsg = createVelMsg(CONST_LINEAR_SPEED_TURN,+CONST_ANGULAR_SPEED_TURN)
@@ -154,6 +164,13 @@ def robotDoAction(velPub, action):
         robotTurnLeft(velPub)
     elif action == 2:
         robotTurnRight(velPub)
+########################################
+    elif action == 3:
+        robotGoSuperForward(velPub)
+    elif action == 4:
+        robotGoBackward(velPub) 
+    elif action == 5:
+        robotStop(velPub)          
     else:
         status = 'robotDoAction => INVALID ACTION'
         robotGoForward(velPub)

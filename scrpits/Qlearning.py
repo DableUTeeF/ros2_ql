@@ -101,6 +101,13 @@ def softMaxSelection(Q_table, state_ind, actions, T):
                 a = 1
             elif (P[0] + P[1]) <= rnd:
                 a = 2
+            # -- code --
+            ########
+            # 
+            # 
+            # 
+            # 
+            ########    
             else:
                 status = 'softMaxSelection => Boltzman distribution error => getBestAction '
                 status = status + '\r\nP = (%f , %f , %f) , rnd = %f' % (P[0],P[1],P[2],rnd)
