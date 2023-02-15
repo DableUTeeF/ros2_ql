@@ -19,8 +19,9 @@ T_MIN = 0.001
 
 # Create actions
 def createActions():
-    actions = np.array([0,1,2])
+    actions = np.array([0,1,2,3,4,5])
     return actions
+# forward, left, right,  superForward, backward, stop
 
 # Create state space for Q table
 def createStateSpace():
