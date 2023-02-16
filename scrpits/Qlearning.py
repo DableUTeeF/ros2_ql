@@ -5,6 +5,7 @@ from math import *
 from std_msgs.msg import String
 from itertools import product
 from sensor_msgs.msg import LaserScan
+import time
 
 STATE_SPACE_IND_MAX = 144 - 1
 STATE_SPACE_IND_MIN = 1 - 1
@@ -127,12 +128,36 @@ def softMaxSelection(Q_table, state_ind, actions, T):
     return ( a, status )
 
 # Reward function for Q-learning - table
-def getReward(action, prev_action, lidar, prev_lidar, crash):
+def getReward(lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time):
     
     terminal_state = False
-    # time penalty
-    reward = -.5 
+    # init reward
+    reward = 0
+
+    # to do in learning_node file
+    # add time start for each episode
+    # add position start for each episode
+    # add current position for each step
+    # add goal position for each episode
+    # add max radius for each episode
+    # add radius reduce rate for each episode
     
+    # time penalty 
+    dist = np.linalg.norm(current_position - goal_position)
+    
+    #  nano time diff
+    time_diff = time.time_ns()- nano_start_time
+    # convert to seconds
+    time_diff = time_diff / 1e9
+
+    radius = max_radius - radius_reduce_rate * (time_diff)
+    if radius/max_radius < 0.1:
+        radius = max_radius * 0.1
+    if dist < radius:
+        reward += .1
+    else:
+        reward += - .1
+
     if crash:
         reward += -100
     lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + HORIZON_WIDTH):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - HORIZON_WIDTH):-1]))
@@ -143,6 +168,9 @@ def getReward(action, prev_action, lidar, prev_lidar, crash):
         reward = +0.2
     else:
         reward = -0.2
+    # euclidean distance to goal(x,y)
+    dist = np.linalg.norm(current_position - goal_position)
+
     return (reward, terminal_state)
     
     # if crash:
