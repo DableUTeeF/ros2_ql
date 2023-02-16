@@ -156,7 +156,7 @@ def getReward(lidar, prev_lidar, crash, current_position, goal_position, max_rad
     if dist < radius:
         reward += .1
     else:
-        reward += - .1
+        reward += - .69
 
     if crash:
         reward += -100
@@ -169,7 +169,7 @@ def getReward(lidar, prev_lidar, crash, current_position, goal_position, max_rad
     else:
         reward = -0.2
     # euclidean distance to goal(x,y)
-    dist = np.linalg.norm(current_position - goal_position)
+    # dist = np.linalg.norm(current_position - goal_position)
 
     return (reward, terminal_state)
     

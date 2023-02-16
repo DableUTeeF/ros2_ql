@@ -368,7 +368,7 @@ class LearningNode(Node):
                             _, odomMsg = self.wait_for_message('/odom', Odometry)
                             ( current_x , current_y ) = getPosition(odomMsg)
                             # radius caculated by norm of  and goal position
-                            MAX_RADIUS = 
+                            # MAX_RADIUS = 
                             
                             # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
                             ( reward, terminal_state) = getReward(lidar, self.prev_lidar, self.crash, )
