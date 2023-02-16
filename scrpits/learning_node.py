@@ -59,6 +59,8 @@ Q_SOURCE_DIR = ''
 
 REWARD_THRESHOLD =  -200.0
 CUMULATIVE_REWARD = 0.0
+GOAL_POSITION = (.0, .0, .0)
+(GOAL_X, GOAL_Y, GOAL_THETA) = GOAL_POSITION
 
 class LearningNode(Node):
     def __init__(self):
@@ -362,7 +364,14 @@ class LearningNode(Node):
                             ( state_ind, x1, x2 ,x3 ,x4 ) = scanDiscretization(self.state_space, lidar)
                             self.crash = checkCrash(lidar)
 
-                            ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
+                            # get position
+                            _, odomMsg = self.wait_for_message('/odom', Odometry)
+                            ( current_x , current_y ) = getPosition(odomMsg)
+                            # radius caculated by norm of  and goal position
+                            MAX_RADIUS = 
+                            
+                            # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
+                            ( reward, terminal_state) = getReward(lidar, self.prev_lidar, self.crash, )
 
                             self.CUMULATIVE_REWARD += reward
                             ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
