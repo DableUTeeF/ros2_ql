@@ -15,7 +15,7 @@ CONST_ANGULAR_SPEED_FORWARD = 0.0
 
 CONST_LINEAR_SPEED_TURN = 0.05
 
-CONST_ANGULAR_SPEED_TURN = 0.4
+CONST_ANGULAR_SPEED_TURN = 0.5
 CONST_ANGULAR_SPEED_CW = 0.69
 
 # Feedback control parameters
@@ -62,27 +62,27 @@ def createVelMsg(v,w):
 
 # Go forward command
 def robotGoForward(velPub):
-    velMsg = createVelMsg(2*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velMsg = createVelMsg(CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
     velPub.publish(velMsg)
 
 # Go 2 x forward command
 def robotGoSuperForward(velPub):
-    velMsg = createVelMsg(5*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velMsg = createVelMsg(2*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
     velPub.publish(velMsg)
 
 # Go backward command
 def robotGoBackward(velPub):
-    velMsg = createVelMsg(-2*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velMsg = createVelMsg(-CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
     velPub.publish(velMsg)
 
 # Turn left command
 def robotTurnLeft(velPub):
-    velMsg = createVelMsg(2*CONST_LINEAR_SPEED_TURN,2*CONST_ANGULAR_SPEED_TURN)
+    velMsg = createVelMsg(CONST_LINEAR_SPEED_TURN,CONST_ANGULAR_SPEED_TURN)
     velPub.publish(velMsg)
 
 # Turn right command
 def robotTurnRight(velPub):
-    velMsg = createVelMsg(2*CONST_LINEAR_SPEED_TURN,-2*CONST_ANGULAR_SPEED_TURN)
+    velMsg = createVelMsg(CONST_LINEAR_SPEED_TURN,-CONST_ANGULAR_SPEED_TURN)
     velPub.publish(velMsg)
 
 # Stop command

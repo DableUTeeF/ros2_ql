@@ -27,7 +27,7 @@ from rclpy.utilities import timeout_sec_to_nsec
 MAX_EPISODES = 10
 MAX_STEPS_PER_EPISODE = 500
 MIN_TIME_BETWEEN_ACTIONS = 0.0
-MAX_EPISODES_BEFORE_SAVE = 2
+MAX_EPISODES_BEFORE_SAVE = 5
 
 # Learning parameters
 ALPHA = 0.5
@@ -61,7 +61,7 @@ RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200.0
 CUMULATIVE_REWARD = 0.0
 
-GOAL_POSITION = (2.0, .8, .0)
+GOAL_POSITION = (.03, 1.9777, .0)
 (GOAL_X, GOAL_Y, GOAL_THETA) = GOAL_POSITION
 GOAL_RADIUS = .06
 class LearningNode(Node):
@@ -121,6 +121,7 @@ class LearningNode(Node):
 
         self.CUMULATIVE_REWARD = CUMULATIVE_REWARD
         self.terminal_state = False
+        self.is_set_pos = False
     
     def log_init(self):
         # Date
@@ -237,6 +238,7 @@ class LearningNode(Node):
             # End of Learning
             if self.episode > MAX_EPISODES :#or self.terminal_state:
                 # simulation time
+                self.is_set_pos = False
                 print(self.episode)
                 sim_time = (self.get_clock().now() - self.t_sim_start).nanoseconds / 1e9
                 sim_time_h = sim_time // 3600
@@ -270,6 +272,7 @@ class LearningNode(Node):
             else:
                 ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
                 # End of en Episode
+                
                 if self.CUMULATIVE_REWARD < REWARD_THRESHOLD or self.terminal_state:
                     robotStop(self.velPub)
                     # if self.crash:
@@ -285,9 +288,9 @@ class LearningNode(Node):
                     now = datetime.now()
                     dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
                     text = '---------------------------------------\r\n'
-                    # if self.crash:
+                    # if self.terminal_state:
                     #     text = text + '\r\nEpisode %d ==> CRASH {%.2f,%.2f,%.2f}    ' % (self.episode, x_crash, y_crash, theta_crash) + dt_string
-                    #     self.reset.call_async(self.dummy_req)
+                    self.reset.call_async(self.dummy_req)
                     # elif self.ep_steps >= MAX_STEPS_PER_EPISODE:
                     #     text = text + '\r\nEpisode %d ==> MAX STEPS PER EPISODE REACHED {%d}    ' % (self.episode, MAX_STEPS_PER_EPISODE) + dt_string
                     # else:
@@ -329,35 +332,39 @@ class LearningNode(Node):
                         print(f"saving data to csv every {MAX_EPISODES_BEFORE_SAVE} episodes")
                         self.save_info_csv()
 
+
                     self.episode = self.episode + 1
                 else:
                     self.ep_steps = self.ep_steps + 1
                     # Initial position
-                    if not self.robot_in_pos:
+                    if not self.is_set_pos:
                         robotStop(self.velPub)
                         self.ep_steps = self.ep_steps - 1
                         self.first_action_taken = False
                         # init pos
                         if RANDOM_INIT_POS:
+                            print('set random pos')
                             ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
                         else:
+                            print('set pos')
                             ( x_init , y_init , theta_init ) = robotSetPos(self.setPosPub, X_INIT, Y_INIT, THETA_INIT)
 
                         _, odomMsg = self.wait_for_message('/odom', Odometry)
                         ( x , y ) = getPosition(odomMsg)
+                        print(x, y)
                         theta = degrees(getRotation(odomMsg))
                         # check init pos
-                        if abs(x-x_init) < 0.01 and abs(y-y_init) < 0.01 and abs(theta-theta_init) < 1:
-                            self.robot_in_pos = True
-                            #sleep(2)
-                        else:
-                            self.robot_in_pos = False
+                        self.is_set_pos = True
+                        # if abs(x-x_init) < 0.01 and abs(y-y_init) < 0.01 and abs(theta-theta_init) < 1:
+                        #     self.robot_in_pos = True
+                        #     #sleep(2)
+                        # else:
+                        #     self.robot_in_pos = False
                     # First acion
                     elif not self.first_action_taken:
                         ( lidar, angles ) = lidarScan(msgScan)
                         ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
                         self.crash = checkCrash(lidar)
-                        print(state_ind)
 
                         if EXPLORATION_FUNCTION == 1 :
                             ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
