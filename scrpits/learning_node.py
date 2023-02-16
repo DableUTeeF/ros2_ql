@@ -24,9 +24,10 @@ from rclpy.signals import SignalHandlerGuardCondition
 from rclpy.utilities import timeout_sec_to_nsec
 
 # Episode parameters
-MAX_EPISODES = 400
+MAX_EPISODES = 10
 MAX_STEPS_PER_EPISODE = 500
 MIN_TIME_BETWEEN_ACTIONS = 0.0
+MAX_EPISODES_BEFORE_SAVE = 2
 
 # Learning parameters
 ALPHA = 0.5
@@ -206,16 +207,32 @@ class LearningNode(Node):
                 return (True, msg_info[0])
 
         return (False, None)
+    
+    def save_info_csv(self):
+        print('writing to csv...')
+        saveQTable(LOG_FILE_DIR+'/Qtable.csv', self.Q_table)
+        np.savetxt(LOG_FILE_DIR+'/StateSpace.csv', self.state_space, '%d')
+        np.savetxt(LOG_FILE_DIR+'/steps_per_episode.csv', self.steps_per_episode, delimiter = ' , ')
+        np.savetxt(LOG_FILE_DIR+'/reward_per_episode.csv', self.reward_per_episode, delimiter = ' , ')
+        np.savetxt(LOG_FILE_DIR+'/T_per_episode.csv', self.T_per_episode, delimiter = ' , ')
+        np.savetxt(LOG_FILE_DIR+'/EPSILON_per_episode.csv', self.EPSILON_per_episode, delimiter = ' , ')
+        np.savetxt(LOG_FILE_DIR+'/reward_min_per_episode.csv', self.reward_min_per_episode, delimiter = ' , ')
+        np.savetxt(LOG_FILE_DIR+'/reward_max_per_episode.csv', self.reward_max_per_episode, delimiter = ' , ')
+        np.savetxt(LOG_FILE_DIR+'/reward_avg_per_episode.csv', self.reward_avg_per_episode, delimiter = ' , ')
+        np.savetxt(LOG_FILE_DIR+'/t_per_episode.csv', self.t_per_episode, delimiter = ' , ')
 
     def timer_callback(self):
             _, msgScan = self.wait_for_message('/scan', LaserScan)
+
+            # find time taken betwwen 2 callbacks
             step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
+
             #if step_time > MIN_TIME_BETWEEN_ACTIONS:
             self.t_step = self.get_clock().now()
-            #if step_time > 2:
-                # text = '\r\nTOO BIG STEP TIME: %.2f s' % step_time
-                # print(text)
-                # self.log_sim_info.write(text+'\r\n')
+            if step_time > 2:
+                text = '\r\nTOO BIG STEP TIME: %.2f s' % step_time
+                print(text)
+                self.log_sim_info.write(text+'\r\n')
             
             # End of Learning
             if self.episode > MAX_EPISODES :#or self.terminal_state:
@@ -227,32 +244,24 @@ class LearningNode(Node):
                 sim_time_s = sim_time - sim_time_h * 3600 - sim_time_m * 60
 
                 # real time
-                now_stop = datetime.now()
-                dt_string_stop = now_stop.strftime("%d/%m/%Y %H:%M:%S")
-                real_time_delta = (now_stop - self.now_start).total_seconds()
-                real_time_h = real_time_delta // 3600
-                real_time_m = ( real_time_delta - real_time_h * 3600 ) // 60
-                real_time_s = real_time_delta - real_time_h * 3600 - real_time_m * 60
+                # now_stop = datetime.now()
+                # dt_string_stop = now_stop.strftime("%d/%m/%Y %H:%M:%S")
+                # real_time_delta = (now_stop - self.now_start).total_seconds()
+                # real_time_h = real_time_delta // 3600
+                # real_time_m = ( real_time_delta - real_time_h * 3600 ) // 60
+                # real_time_s = real_time_delta - real_time_h * 3600 - real_time_m * 60
 
                 # Log learning session info to file
                 text = '--------------------------------------- \r\n\r\n'
-                text = text + 'MAX EPISODES REACHED(%d), LEARNING FINISHED ==> ' % MAX_EPISODES + dt_string_stop + '\r\n'
+                text = text + 'MAX EPISODES REACHED(%d), LEARNING FINISHED' % MAX_EPISODES + '\r\n'
                 text = text + 'Simulation time: %d:%d:%d  h/m/s \r\n' % (sim_time_h, sim_time_m, sim_time_s)
-                text = text + 'Real time: %d:%d:%d  h/m/s \r\n' % (real_time_h, real_time_m, real_time_s)
+                # text = text + 'Real time: %d:%d:%d  h/m/s \r\n' % (real_time_h, real_time_m, real_time_s)
                 print(text)
                 self.log_sim_info.write('\r\n'+text+'\r\n')
                 self.log_sim_params.write(text+'\r\n')
+                
                 # Log data to file
-                saveQTable(LOG_FILE_DIR+'/Qtable.csv', self.Q_table)
-                np.savetxt(LOG_FILE_DIR+'/StateSpace.csv', self.state_space, '%d')
-                np.savetxt(LOG_FILE_DIR+'/steps_per_episode.csv', self.steps_per_episode, delimiter = ' , ')
-                np.savetxt(LOG_FILE_DIR+'/reward_per_episode.csv', self.reward_per_episode, delimiter = ' , ')
-                np.savetxt(LOG_FILE_DIR+'/T_per_episode.csv', self.T_per_episode, delimiter = ' , ')
-                np.savetxt(LOG_FILE_DIR+'/EPSILON_per_episode.csv', self.EPSILON_per_episode, delimiter = ' , ')
-                np.savetxt(LOG_FILE_DIR+'/reward_min_per_episode.csv', self.reward_min_per_episode, delimiter = ' , ')
-                np.savetxt(LOG_FILE_DIR+'/reward_max_per_episode.csv', self.reward_max_per_episode, delimiter = ' , ')
-                np.savetxt(LOG_FILE_DIR+'/reward_avg_per_episode.csv', self.reward_avg_per_episode, delimiter = ' , ')
-                np.savetxt(LOG_FILE_DIR+'/t_per_episode.csv', self.t_per_episode, delimiter = ' , ')
+                self.save_info_csv()
 
                 # Close files and shut down node
                 self.log_sim_info.close()
@@ -314,6 +323,12 @@ class LearningNode(Node):
                         self.T = T_GRAD * self.T
                     if self.EPSILON > EPSILON_MIN:
                         self.EPSILON = EPSILON_GRAD * self.EPSILON
+
+                    # save to csv every n episodes
+                    if self.episode % MAX_EPISODES_BEFORE_SAVE == 0:
+                        print(f"saving data to csv every {MAX_EPISODES_BEFORE_SAVE} episodes")
+                        self.save_info_csv()
+
                     self.episode = self.episode + 1
                 else:
                     self.ep_steps = self.ep_steps + 1
