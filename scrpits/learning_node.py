@@ -56,12 +56,13 @@ LOG_FILE_DIR = DATA_PATH + '/Log_learning'
 # Q table source file
 Q_SOURCE_DIR = ''
 
-
+RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200.0
 CUMULATIVE_REWARD = 0.0
+
 GOAL_POSITION = (.0, .0, .0)
 (GOAL_X, GOAL_Y, GOAL_THETA) = GOAL_POSITION
-
+GOAL_RADIUS = .06
 class LearningNode(Node):
     def __init__(self):
         super().__init__('learning_node')
@@ -212,7 +213,7 @@ class LearningNode(Node):
                     text = '\r\nTOO BIG STEP TIME: %.2f s' % step_time
                     print(text)
                     self.log_sim_info.write(text+'\r\n')
-
+                
                 # End of Learning
                 if self.episode > MAX_EPISODES:
                     # simulation time
@@ -256,13 +257,13 @@ class LearningNode(Node):
                 else:
                     ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
                     # End of en Episode
-                    if self.crash or self.ep_steps >= MAX_STEPS_PER_EPISODE:
+                    if self.CUMULATIVE_REWARD > REWARD_THRESHOLD:
                         robotStop(self.velPub)
-                        if self.crash:
-                            # get crash position
-                            _, odomMsg = self.wait_for_message('/odom', Odometry)
-                            ( x_crash , y_crash ) = getPosition(odomMsg)
-                            theta_crash = degrees(getRotation(odomMsg))
+                        # if self.crash:
+                        #     # get crash position
+                        #     _, odomMsg = self.wait_for_message('/odom', Odometry)
+                        #     ( x_crash , y_crash ) = getPosition(odomMsg)
+                        #     theta_crash = degrees(getRotation(odomMsg))
 
                         self.t_ep = self.get_clock().now()
                         self.reward_min = np.min(self.ep_reward_arr)
@@ -271,13 +272,13 @@ class LearningNode(Node):
                         now = datetime.now()
                         dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
                         text = '---------------------------------------\r\n'
-                        if self.crash:
-                            text = text + '\r\nEpisode %d ==> CRASH {%.2f,%.2f,%.2f}    ' % (self.episode, x_crash, y_crash, theta_crash) + dt_string
-                            self.reset.call_async(self.dummy_req)
-                        elif self.ep_steps >= MAX_STEPS_PER_EPISODE:
-                            text = text + '\r\nEpisode %d ==> MAX STEPS PER EPISODE REACHED {%d}    ' % (self.episode, MAX_STEPS_PER_EPISODE) + dt_string
-                        else:
-                            text = text + '\r\nEpisode %d ==> UNKNOWN TERMINAL CASE    ' % self.episode + dt_string
+                        # if self.crash:
+                        #     text = text + '\r\nEpisode %d ==> CRASH {%.2f,%.2f,%.2f}    ' % (self.episode, x_crash, y_crash, theta_crash) + dt_string
+                        #     self.reset.call_async(self.dummy_req)
+                        # elif self.ep_steps >= MAX_STEPS_PER_EPISODE:
+                        #     text = text + '\r\nEpisode %d ==> MAX STEPS PER EPISODE REACHED {%d}    ' % (self.episode, MAX_STEPS_PER_EPISODE) + dt_string
+                        # else:
+                        #     text = text + '\r\nEpisode %d ==> UNKNOWN TERMINAL CASE    ' % self.episode + dt_string
                         text = text + '\r\nepisode time: %.2f s (avg step: %.2f s) \r\n' % (ep_time, ep_time / self.ep_steps)
                         text = text + 'episode steps: %d \r\n' % self.ep_steps
                         text = text + 'episode reward: %.2f \r\n' % self.ep_reward
@@ -300,6 +301,7 @@ class LearningNode(Node):
                         self.ep_reward_arr = np.array([])
                         self.ep_steps = 0
                         self.ep_reward = 0
+                        # cum reward reset
                         self.CUMULATIVE_REWARD = 0
                         self.crash = 0
                         self.robot_in_pos = False
@@ -368,10 +370,11 @@ class LearningNode(Node):
                             _, odomMsg = self.wait_for_message('/odom', Odometry)
                             ( current_x , current_y ) = getPosition(odomMsg)
                             # radius caculated by norm of  and goal position
-                            MAX_RADIUS = 
-                            
+                            MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])
+                        
                             # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
-                            ( reward, terminal_state) = getReward(lidar, self.prev_lidar, self.crash, )
+                            # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time):
+                            ( reward, terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash, (current_x, current_y), (GOAL_X, GOAL_Y), MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time , self.get_clock().nanoseconds(), GOAL_RADIUS)
 
                             self.CUMULATIVE_REWARD += reward
                             ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
