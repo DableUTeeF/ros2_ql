@@ -128,8 +128,8 @@ def softMaxSelection(Q_table, state_ind, actions, T):
     return ( a, status )
 
 # Reward function for Q-learning - table
-def getReward(lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time):
-    
+def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time, goal_radius):
+
     terminal_state = False
     # init reward
     reward = 0
@@ -146,9 +146,7 @@ def getReward(lidar, prev_lidar, crash, current_position, goal_position, max_rad
     dist = np.linalg.norm(current_position - goal_position)
     
     #  nano time diff
-    time_diff = time.time_ns()- nano_start_time
-    # convert to seconds
-    time_diff = time_diff / 1e9
+    time_diff = (nano_current_time - nano_start_time)
 
     radius = max_radius - radius_reduce_rate * (time_diff)
     if radius/max_radius < 0.1:
@@ -165,11 +163,12 @@ def getReward(lidar, prev_lidar, crash, current_position, goal_position, max_rad
     W = np.linspace(0.9, 1.1, len(lidar_horizon) // 2)
     W = np.append(W, np.linspace(1.1, 0.9, len(lidar_horizon) // 2))
     if np.sum( W * ( lidar_horizon - prev_lidar_horizon) ) >= 0:
-        reward = +0.2
+        reward += +0.2
     else:
-        reward = -0.2
-    # euclidean distance to goal(x,y)
-    dist = np.linalg.norm(current_position - goal_position)
+        reward += -0.2
+    # action and prev_action is same and action is left or right
+    if action == prev_action and action in (1, 2):
+        reward += -0.1
 
     return (reward, terminal_state)
     
