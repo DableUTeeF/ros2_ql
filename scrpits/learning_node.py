@@ -215,7 +215,7 @@ class LearningNode(Node):
                     self.log_sim_info.write(text+'\r\n')
                 
                 # End of Learning
-                if self.episode > MAX_EPISODES:
+                if self.episode > MAX_EPISODES or self.terminal_state:
                     # simulation time
                     sim_time = (self.get_clock().now() - self.t_sim_start).nanoseconds / 1e9
                     sim_time_h = sim_time // 3600
@@ -257,7 +257,7 @@ class LearningNode(Node):
                 else:
                     ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
                     # End of en Episode
-                    if self.CUMULATIVE_REWARD > REWARD_THRESHOLD:
+                    if self.CUMULATIVE_REWARD < REWARD_THRESHOLD :
                         robotStop(self.velPub)
                         # if self.crash:
                         #     # get crash position
@@ -374,7 +374,7 @@ class LearningNode(Node):
                         
                             # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
                             # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time):
-                            ( reward, terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash, (current_x, current_y), (GOAL_X, GOAL_Y), MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time , self.get_clock().nanoseconds(), GOAL_RADIUS)
+                            ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash, (current_x, current_y), (GOAL_X, GOAL_Y), MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time , self.get_clock().nanoseconds(), GOAL_RADIUS)
 
                             self.CUMULATIVE_REWARD += reward
                             ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
