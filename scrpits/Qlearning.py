@@ -26,11 +26,14 @@ def createActions():
 
 # Create state space for Q table
 def createStateSpace():
-    x1 = set((0,1,2))
-    x2 = set((0,1,2))
+    x1 = set((0,1,2,3))
+    x2 = set((0,1,2,3))
     x3 = set((0,1,2,3))
     x4 = set((0,1,2,3))
-    state_space = set(product(x1,x2,x3,x4))
+    x5 = set((0,1,2,3))
+    x6 = set((0,1,2,3))
+    x7 = set((0,1,2))
+    state_space = set(product(x1,x2,x3,x4,x5,x6,x7))
     return np.array(list(state_space))
 
 # Create Q table, dim: n_states x n_actions
@@ -112,7 +115,7 @@ def softMaxSelection(Q_table, state_ind, actions, T):
             # elif (P[0] + P[1] + P[2] + P[3] + P[4]) <= rnd:
             #     a = 5
             try:
-                a = np.random.choice([0, 1, 2, 3, 4, 5], 1, p = P_ac)
+                a = np.random.choice(n_actions, 1, p = P_ac)
             ###################################    
             except:
                 status = 'softMaxSelection => Boltzman distribution error => getBestAction '
