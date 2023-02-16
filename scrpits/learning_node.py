@@ -210,202 +210,202 @@ class LearningNode(Node):
     def timer_callback(self):
             _, msgScan = self.wait_for_message('/scan', LaserScan)
             step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
-            if step_time > MIN_TIME_BETWEEN_ACTIONS:
-                self.t_step = self.get_clock().now()
-                if step_time > 2:
-                    text = '\r\nTOO BIG STEP TIME: %.2f s' % step_time
-                    print(text)
-                    self.log_sim_info.write(text+'\r\n')
-                
-                # End of Learning
-                if self.episode > MAX_EPISODES :#or self.terminal_state:
-                    # simulation time
-                    sim_time = (self.get_clock().now() - self.t_sim_start).nanoseconds / 1e9
-                    sim_time_h = sim_time // 3600
-                    sim_time_m = ( sim_time - sim_time_h * 3600 ) // 60
-                    sim_time_s = sim_time - sim_time_h * 3600 - sim_time_m * 60
+            #if step_time > MIN_TIME_BETWEEN_ACTIONS:
+            self.t_step = self.get_clock().now()
+            #if step_time > 2:
+                # text = '\r\nTOO BIG STEP TIME: %.2f s' % step_time
+                # print(text)
+                # self.log_sim_info.write(text+'\r\n')
+            
+            # End of Learning
+            if self.episode > MAX_EPISODES :#or self.terminal_state:
+                # simulation time
+                print(self.episode)
+                sim_time = (self.get_clock().now() - self.t_sim_start).nanoseconds / 1e9
+                sim_time_h = sim_time // 3600
+                sim_time_m = ( sim_time - sim_time_h * 3600 ) // 60
+                sim_time_s = sim_time - sim_time_h * 3600 - sim_time_m * 60
 
-                    # real time
-                    now_stop = datetime.now()
-                    dt_string_stop = now_stop.strftime("%d/%m/%Y %H:%M:%S")
-                    real_time_delta = (now_stop - self.now_start).total_seconds()
-                    real_time_h = real_time_delta // 3600
-                    real_time_m = ( real_time_delta - real_time_h * 3600 ) // 60
-                    real_time_s = real_time_delta - real_time_h * 3600 - real_time_m * 60
+                # real time
+                now_stop = datetime.now()
+                dt_string_stop = now_stop.strftime("%d/%m/%Y %H:%M:%S")
+                real_time_delta = (now_stop - self.now_start).total_seconds()
+                real_time_h = real_time_delta // 3600
+                real_time_m = ( real_time_delta - real_time_h * 3600 ) // 60
+                real_time_s = real_time_delta - real_time_h * 3600 - real_time_m * 60
 
-                    # Log learning session info to file
-                    text = '--------------------------------------- \r\n\r\n'
-                    text = text + 'MAX EPISODES REACHED(%d), LEARNING FINISHED ==> ' % MAX_EPISODES + dt_string_stop + '\r\n'
-                    text = text + 'Simulation time: %d:%d:%d  h/m/s \r\n' % (sim_time_h, sim_time_m, sim_time_s)
-                    text = text + 'Real time: %d:%d:%d  h/m/s \r\n' % (real_time_h, real_time_m, real_time_s)
-                    print(text)
-                    self.log_sim_info.write('\r\n'+text+'\r\n')
-                    self.log_sim_params.write(text+'\r\n')
-                    # Log data to file
-                    saveQTable(LOG_FILE_DIR+'/Qtable.csv', self.Q_table)
-                    np.savetxt(LOG_FILE_DIR+'/StateSpace.csv', self.state_space, '%d')
-                    np.savetxt(LOG_FILE_DIR+'/steps_per_episode.csv', self.steps_per_episode, delimiter = ' , ')
-                    np.savetxt(LOG_FILE_DIR+'/reward_per_episode.csv', self.reward_per_episode, delimiter = ' , ')
-                    np.savetxt(LOG_FILE_DIR+'/T_per_episode.csv', self.T_per_episode, delimiter = ' , ')
-                    np.savetxt(LOG_FILE_DIR+'/EPSILON_per_episode.csv', self.EPSILON_per_episode, delimiter = ' , ')
-                    np.savetxt(LOG_FILE_DIR+'/reward_min_per_episode.csv', self.reward_min_per_episode, delimiter = ' , ')
-                    np.savetxt(LOG_FILE_DIR+'/reward_max_per_episode.csv', self.reward_max_per_episode, delimiter = ' , ')
-                    np.savetxt(LOG_FILE_DIR+'/reward_avg_per_episode.csv', self.reward_avg_per_episode, delimiter = ' , ')
-                    np.savetxt(LOG_FILE_DIR+'/t_per_episode.csv', self.t_per_episode, delimiter = ' , ')
+                # Log learning session info to file
+                text = '--------------------------------------- \r\n\r\n'
+                text = text + 'MAX EPISODES REACHED(%d), LEARNING FINISHED ==> ' % MAX_EPISODES + dt_string_stop + '\r\n'
+                text = text + 'Simulation time: %d:%d:%d  h/m/s \r\n' % (sim_time_h, sim_time_m, sim_time_s)
+                text = text + 'Real time: %d:%d:%d  h/m/s \r\n' % (real_time_h, real_time_m, real_time_s)
+                print(text)
+                self.log_sim_info.write('\r\n'+text+'\r\n')
+                self.log_sim_params.write(text+'\r\n')
+                # Log data to file
+                saveQTable(LOG_FILE_DIR+'/Qtable.csv', self.Q_table)
+                np.savetxt(LOG_FILE_DIR+'/StateSpace.csv', self.state_space, '%d')
+                np.savetxt(LOG_FILE_DIR+'/steps_per_episode.csv', self.steps_per_episode, delimiter = ' , ')
+                np.savetxt(LOG_FILE_DIR+'/reward_per_episode.csv', self.reward_per_episode, delimiter = ' , ')
+                np.savetxt(LOG_FILE_DIR+'/T_per_episode.csv', self.T_per_episode, delimiter = ' , ')
+                np.savetxt(LOG_FILE_DIR+'/EPSILON_per_episode.csv', self.EPSILON_per_episode, delimiter = ' , ')
+                np.savetxt(LOG_FILE_DIR+'/reward_min_per_episode.csv', self.reward_min_per_episode, delimiter = ' , ')
+                np.savetxt(LOG_FILE_DIR+'/reward_max_per_episode.csv', self.reward_max_per_episode, delimiter = ' , ')
+                np.savetxt(LOG_FILE_DIR+'/reward_avg_per_episode.csv', self.reward_avg_per_episode, delimiter = ' , ')
+                np.savetxt(LOG_FILE_DIR+'/t_per_episode.csv', self.t_per_episode, delimiter = ' , ')
 
-                    # Close files and shut down node
-                    self.log_sim_info.close()
-                    self.log_sim_params.close()
-                    raise SystemExit
-                else:
-                    ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
-                    # End of en Episode
-                    if self.CUMULATIVE_REWARD < REWARD_THRESHOLD or self.terminal_state:
-                        robotStop(self.velPub)
-                        # if self.crash:
-                        #     # get crash position
-                        #     _, odomMsg = self.wait_for_message('/odom', Odometry)
-                        #     ( x_crash , y_crash ) = getPosition(odomMsg)
-                        #     theta_crash = degrees(getRotation(odomMsg))
+                # Close files and shut down node
+                self.log_sim_info.close()
+                self.log_sim_params.close()
+                raise SystemExit
+            else:
+                ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
+                # End of en Episode
+                if self.CUMULATIVE_REWARD < REWARD_THRESHOLD or self.terminal_state:
+                    robotStop(self.velPub)
+                    # if self.crash:
+                    #     # get crash position
+                    #     _, odomMsg = self.wait_for_message('/odom', Odometry)
+                    #     ( x_crash , y_crash ) = getPosition(odomMsg)
+                    #     theta_crash = degrees(getRotation(odomMsg))
 
-                        self.t_ep = self.get_clock().now()
-                        self.reward_min = np.min(self.ep_reward_arr)
-                        self.reward_max = np.max(self.ep_reward_arr)
-                        self.reward_avg = np.mean(self.ep_reward_arr)
-                        now = datetime.now()
-                        dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
-                        text = '---------------------------------------\r\n'
-                        # if self.crash:
-                        #     text = text + '\r\nEpisode %d ==> CRASH {%.2f,%.2f,%.2f}    ' % (self.episode, x_crash, y_crash, theta_crash) + dt_string
-                        #     self.reset.call_async(self.dummy_req)
-                        # elif self.ep_steps >= MAX_STEPS_PER_EPISODE:
-                        #     text = text + '\r\nEpisode %d ==> MAX STEPS PER EPISODE REACHED {%d}    ' % (self.episode, MAX_STEPS_PER_EPISODE) + dt_string
-                        # else:
-                        #     text = text + '\r\nEpisode %d ==> UNKNOWN TERMINAL CASE    ' % self.episode + dt_string
-                        text = text + '\r\nepisode time: %.2f s (avg step: %.2f s) \r\n' % (ep_time, ep_time / self.ep_steps)
-                        text = text + 'episode steps: %d \r\n' % self.ep_steps
-                        text = text + 'episode reward: %.2f \r\n' % self.ep_reward
-                        text = text + 'episode max | avg | min reward: %.2f | %.2f | %.2f \r\n' % (self.reward_max, self.reward_avg, self.reward_min)
-                        if EXPLORATION_FUNCTION == 1:
-                            text = text + 'T = %f \r\n' % self.T
-                        else:
-                            text = text + 'EPSILON = %f \r\n' % self.EPSILON
-                        print(text)
-                        self.log_sim_info.write('\r\n'+text)
-
-                        self.steps_per_episode = np.append(self.steps_per_episode, self.ep_steps)
-                        self.reward_per_episode = np.append(self.reward_per_episode, self.ep_reward)
-                        self.T_per_episode = np.append(self.T_per_episode, self.T)
-                        self.EPSILON_per_episode = np.append(self.EPSILON_per_episode, self.EPSILON)
-                        self.t_per_episode = np.append(self.t_per_episode, ep_time)
-                        self.reward_min_per_episode = np.append(self.reward_min_per_episode, self.reward_min)
-                        self.reward_max_per_episode = np.append(self.reward_max_per_episode, self.reward_max)
-                        self.reward_avg_per_episode = np.append(self.reward_avg_per_episode, self.reward_avg)
-                        self.ep_reward_arr = np.array([])
-                        self.ep_steps = 0
-                        self.ep_reward = 0
-                        # cum reward reset
-                        self.CUMULATIVE_REWARD = 0
-                        self.crash = 0
-                        self.robot_in_pos = False
-                        self.first_action_taken = False
-                        if self.T > T_MIN:
-                            self.T = T_GRAD * self.T
-                        if self.EPSILON > EPSILON_MIN:
-                            self.EPSILON = EPSILON_GRAD * self.EPSILON
-                        self.episode = self.episode + 1
+                    self.t_ep = self.get_clock().now()
+                    self.reward_min = np.min(self.ep_reward_arr)
+                    self.reward_max = np.max(self.ep_reward_arr)
+                    self.reward_avg = np.mean(self.ep_reward_arr)
+                    now = datetime.now()
+                    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+                    text = '---------------------------------------\r\n'
+                    # if self.crash:
+                    #     text = text + '\r\nEpisode %d ==> CRASH {%.2f,%.2f,%.2f}    ' % (self.episode, x_crash, y_crash, theta_crash) + dt_string
+                    #     self.reset.call_async(self.dummy_req)
+                    # elif self.ep_steps >= MAX_STEPS_PER_EPISODE:
+                    #     text = text + '\r\nEpisode %d ==> MAX STEPS PER EPISODE REACHED {%d}    ' % (self.episode, MAX_STEPS_PER_EPISODE) + dt_string
+                    # else:
+                    #     text = text + '\r\nEpisode %d ==> UNKNOWN TERMINAL CASE    ' % self.episode + dt_string
+                    text = text + '\r\nepisode time: %.2f s (avg step: %.2f s) \r\n' % (ep_time, ep_time / self.ep_steps)
+                    text = text + 'episode steps: %d \r\n' % self.ep_steps
+                    text = text + 'episode reward: %.2f \r\n' % self.ep_reward
+                    text = text + 'episode max | avg | min reward: %.2f | %.2f | %.2f \r\n' % (self.reward_max, self.reward_avg, self.reward_min)
+                    if EXPLORATION_FUNCTION == 1:
+                        text = text + 'T = %f \r\n' % self.T
                     else:
-                        self.ep_steps = self.ep_steps + 1
-                        # Initial position
-                        if not self.robot_in_pos:
-                            robotStop(self.velPub)
-                            self.ep_steps = self.ep_steps - 1
-                            self.first_action_taken = False
-                            # init pos
-                            if RANDOM_INIT_POS:
-                                ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
-                            else:
-                                ( x_init , y_init , theta_init ) = robotSetPos(self.setPosPub, X_INIT, Y_INIT, THETA_INIT)
+                        text = text + 'EPSILON = %f \r\n' % self.EPSILON
+                    print(text)
+                    self.log_sim_info.write('\r\n'+text)
 
-                            _, odomMsg = self.wait_for_message('/odom', Odometry)
-                            ( x , y ) = getPosition(odomMsg)
-                            theta = degrees(getRotation(odomMsg))
-                            # check init pos
-                            if abs(x-x_init) < 0.01 and abs(y-y_init) < 0.01 and abs(theta-theta_init) < 1:
-                                self.robot_in_pos = True
-                                #sleep(2)
-                            else:
-                                self.robot_in_pos = False
-                        # First acion
-                        elif not self.first_action_taken:
-                            ( lidar, angles ) = lidarScan(msgScan)
-                            ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
-                            self.crash = checkCrash(lidar)
-                            print(state_ind)
-
-                            if EXPLORATION_FUNCTION == 1 :
-                                ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
-                            else:
-                                ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.T)
-
-                            status_rda = robotDoAction(self.velPub, self.action)
-
-                            self.prev_lidar = lidar
-                            self.prev_action = self.action
-                            self.prev_state_ind = state_ind
-
-                            self.first_action_taken = True
-
-                            if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsiloGreedyExploration => OK'):
-                                print('\r\n', status_strat, '\r\n')
-                                self.log_sim_info.write('\r\n'+status_strat+'\r\n')
-
-                            if not status_rda == 'robotDoAction => OK':
-                                print('\r\n', status_rda, '\r\n')
-                                self.log_sim_info.write('\r\n'+status_rda+'\r\n')
-
-                        # Rest of the algorithm
+                    self.steps_per_episode = np.append(self.steps_per_episode, self.ep_steps)
+                    self.reward_per_episode = np.append(self.reward_per_episode, self.ep_reward)
+                    self.T_per_episode = np.append(self.T_per_episode, self.T)
+                    self.EPSILON_per_episode = np.append(self.EPSILON_per_episode, self.EPSILON)
+                    self.t_per_episode = np.append(self.t_per_episode, ep_time)
+                    self.reward_min_per_episode = np.append(self.reward_min_per_episode, self.reward_min)
+                    self.reward_max_per_episode = np.append(self.reward_max_per_episode, self.reward_max)
+                    self.reward_avg_per_episode = np.append(self.reward_avg_per_episode, self.reward_avg)
+                    self.ep_reward_arr = np.array([])
+                    self.ep_steps = 0
+                    self.ep_reward = 0
+                    # cum reward reset
+                    self.CUMULATIVE_REWARD = 0
+                    self.crash = 0
+                    self.robot_in_pos = False
+                    self.first_action_taken = False
+                    if self.T > T_MIN:
+                        self.T = T_GRAD * self.T
+                    if self.EPSILON > EPSILON_MIN:
+                        self.EPSILON = EPSILON_GRAD * self.EPSILON
+                    self.episode = self.episode + 1
+                else:
+                    self.ep_steps = self.ep_steps + 1
+                    # Initial position
+                    if not self.robot_in_pos:
+                        robotStop(self.velPub)
+                        self.ep_steps = self.ep_steps - 1
+                        self.first_action_taken = False
+                        # init pos
+                        if RANDOM_INIT_POS:
+                            ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
                         else:
-                            ( lidar, angles ) = lidarScan(msgScan)
-                            ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
-                            self.crash = checkCrash(lidar)
+                            ( x_init , y_init , theta_init ) = robotSetPos(self.setPosPub, X_INIT, Y_INIT, THETA_INIT)
 
-                            # get position
-                            _, odomMsg = self.wait_for_message('/odom', Odometry)
-                            ( current_x , current_y ) = getPosition(odomMsg)
-                            # radius caculated by norm of  and goal position
-                            MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])
-                        
-                            # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
-                            # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time):
-                            ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash, (current_x, current_y), (GOAL_X, GOAL_Y), MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time , self.get_clock().now().nanoseconds, GOAL_RADIUS)
-                            #print(reward)
-                            self.CUMULATIVE_REWARD += reward
-                            print(self.CUMULATIVE_REWARD)
-                            ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
+                        _, odomMsg = self.wait_for_message('/odom', Odometry)
+                        ( x , y ) = getPosition(odomMsg)
+                        theta = degrees(getRotation(odomMsg))
+                        # check init pos
+                        if abs(x-x_init) < 0.01 and abs(y-y_init) < 0.01 and abs(theta-theta_init) < 1:
+                            self.robot_in_pos = True
+                            #sleep(2)
+                        else:
+                            self.robot_in_pos = False
+                    # First acion
+                    elif not self.first_action_taken:
+                        ( lidar, angles ) = lidarScan(msgScan)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
+                        self.crash = checkCrash(lidar)
+                        print(state_ind)
 
-                            if EXPLORATION_FUNCTION == 1:
-                                ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
-                            else:
-                                ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.T)
+                        if EXPLORATION_FUNCTION == 1 :
+                            ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
+                        else:
+                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.T)
 
-                            status_rda = robotDoAction(self.velPub, self.action)
+                        status_rda = robotDoAction(self.velPub, self.action)
 
-                            if not status_uqt == 'updateQTable => OK':
-                                print('\r\n', status_uqt, '\r\n')
-                                self.log_sim_info.write('\r\n'+status_uqt+'\r\n')
-                            if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsiloGreedyExploration => OK'):
-                                print('\r\n', status_strat, '\r\n')
-                                self.log_sim_info.write('\r\n'+status_strat+'\r\n')
-                            if not status_rda == 'robotDoAction => OK':
-                                print('\r\n', status_rda, '\r\n')
-                                self.log_sim_info.write('\r\n'+status_rda+'\r\n')
+                        self.prev_lidar = lidar
+                        self.prev_action = self.action
+                        self.prev_state_ind = state_ind
 
-                            self.ep_reward = self.ep_reward + reward
-                            self.ep_reward_arr = np.append(self.ep_reward_arr, reward)
-                            self.prev_lidar = lidar
-                            self.prev_action = self.action
-                            self.prev_state_ind = state_ind
+                        self.first_action_taken = True
+
+                        if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsiloGreedyExploration => OK'):
+                            print('\r\n', status_strat, '\r\n')
+                            self.log_sim_info.write('\r\n'+status_strat+'\r\n')
+
+                        if not status_rda == 'robotDoAction => OK':
+                            print('\r\n', status_rda, '\r\n')
+                            self.log_sim_info.write('\r\n'+status_rda+'\r\n')
+
+                    # Rest of the algorithm
+                    else:
+                        ( lidar, angles ) = lidarScan(msgScan)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
+                        self.crash = checkCrash(lidar)
+
+                        # get position
+                        _, odomMsg = self.wait_for_message('/odom', Odometry)
+                        ( current_x , current_y ) = getPosition(odomMsg)
+                        # radius caculated by norm of  and goal position
+                        MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])
+                    
+                        # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
+                        # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time):
+                        ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash, (current_x, current_y), (GOAL_X, GOAL_Y), MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time , self.get_clock().now().nanoseconds, GOAL_RADIUS)
+                        self.CUMULATIVE_REWARD += reward
+                        print('CUMULATIVE_REWARD: ', self.CUMULATIVE_REWARD)
+                        ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
+
+                        if EXPLORATION_FUNCTION == 1:
+                            ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
+                        else:
+                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.T)
+
+                        status_rda = robotDoAction(self.velPub, self.action)
+
+                        if not status_uqt == 'updateQTable => OK':
+                            print('\r\n', status_uqt, '\r\n')
+                            self.log_sim_info.write('\r\n'+status_uqt+'\r\n')
+                        if not (status_strat == 'softMaxSelection => OK' or status_strat == 'epsiloGreedyExploration => OK'):
+                            print('\r\n', status_strat, '\r\n')
+                            self.log_sim_info.write('\r\n'+status_strat+'\r\n')
+                        if not status_rda == 'robotDoAction => OK':
+                            print('\r\n', status_rda, '\r\n')
+                            self.log_sim_info.write('\r\n'+status_rda+'\r\n')
+
+                        self.ep_reward = self.ep_reward + reward
+                        self.ep_reward_arr = np.append(self.ep_reward_arr, reward)
+                        self.prev_lidar = lidar
+                        self.prev_action = self.action
+                        self.prev_state_ind = state_ind
 
 
 

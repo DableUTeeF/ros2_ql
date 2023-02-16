@@ -10,10 +10,10 @@ import numpy as np
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
 
 # Q-learning speed parameters
-CONST_LINEAR_SPEED_FORWARD = 0.08
+CONST_LINEAR_SPEED_FORWARD = 0.1
 CONST_ANGULAR_SPEED_FORWARD = 0.0
 
-CONST_LINEAR_SPEED_TURN = 0.06
+CONST_LINEAR_SPEED_TURN = 0.05
 
 CONST_ANGULAR_SPEED_TURN = 0.4
 CONST_ANGULAR_SPEED_CW = 0.69
@@ -67,7 +67,7 @@ def robotGoForward(velPub):
 
 # Go 2 x forward command
 def robotGoSuperForward(velPub):
-    velMsg = createVelMsg(4*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velMsg = createVelMsg(5*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
     velPub.publish(velMsg)
 
 # Go backward command
