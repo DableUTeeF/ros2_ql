@@ -14,6 +14,7 @@ CONST_LINEAR_SPEED_FORWARD = 0.08
 CONST_ANGULAR_SPEED_FORWARD = 0.0
 CONST_LINEAR_SPEED_TURN = 0.06
 CONST_ANGULAR_SPEED_TURN = 0.4
+CONST_ANGULAR_SPEED_CW = 0.69
 
 # Feedback control parameters
 K_RO = 2
@@ -86,7 +87,15 @@ def robotTurnRight(velPub):
 def robotStop(velPub):
     velMsg = createVelMsg(0.0,0.0)
     velPub.publish(velMsg)
+# CW command
+def robotCW(velPub):
+    velMsg = createVelMsg(0.0, -CONST_ANGULAR_SPEED_CW)
+    velPub.publish(velMsg)
 
+# CCW command
+def robotCCW(velPub):
+    velMsg = createVelMsg(0.0, +CONST_ANGULAR_SPEED_CW)
+    velPub.publish(velMsg)    
 # Set robot position and orientation
 def robotSetPos(setPosPub, x, y, theta):
     checkpoint = ModelState()
@@ -170,7 +179,11 @@ def robotDoAction(velPub, action):
     elif action == 4:
         robotGoBackward(velPub) 
     elif action == 5:
-        robotStop(velPub)          
+        robotStop(velPub)   
+    elif action == 6:
+        robotCW(velPub)
+    elif action == 7:
+        robotCCW(velPub)       
     else:
         status = 'robotDoAction => INVALID ACTION'
         robotGoForward(velPub)
@@ -180,16 +193,16 @@ def robotDoAction(velPub, action):
 # Feedback Control Algorithm
 def robotFeedbackControl(velPub, x, y, theta, x_goal, y_goal, theta_goal):
     # theta goal normalization
-    if theta_goal >= pi:
-        theta_goal_norm = theta_goal - 2 * pi
+    if theta_goal >= np.pi:
+        theta_goal_norm = theta_goal - 2 * np.pi
     else:
         theta_goal_norm = theta_goal
 
     ro = sqrt( pow( ( x_goal - x ) , 2 ) + pow( ( y_goal - y ) , 2) )
     lamda = atan2( y_goal - y , x_goal - x )
 
-    alpha = (lamda -  theta + pi) % (2 * pi) - pi
-    beta = (theta_goal - lamda + pi) % (2 * pi) - pi
+    alpha = (lamda -  theta + np.pi) % (2 * np.pi) - np.pi
+    beta = (theta_goal - lamda + np.pi) % (2 * np.pi) - np.pi
 
     if ro < GOAL_DIST_THRESHOLD and degrees(abs(theta-theta_goal_norm)) < GOAL_ANGLE_THRESHOLD:
         status = 'Goal position reached!'

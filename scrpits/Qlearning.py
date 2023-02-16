@@ -20,9 +20,9 @@ T_MIN = 0.001
 
 # Create actions
 def createActions():
-    actions = np.array([0,1,2,3,4,5])
+    actions = np.array([0,1,2,3,4,5,6,7])
     return actions
-# forward, left, right,  superForward, backward, stop
+# forward, left, right,  superForward, backward, stop, CW, CCW
 
 # Create state space for Q table
 def createStateSpace():
@@ -99,28 +99,13 @@ def softMaxSelection(Q_table, state_ind, actions, T):
         else:
             # rnd = np.random.uniform()
             status = 'softMaxSelection => OK'
-            # if P[0] > rnd:
-            #     a = 0
-            # elif P[0] <= rnd and (P[0] + P[1]) > rnd:
-            #     a = 1
-            # elif (P[0] + P[1]) <= rnd:
-            #     a = 2
-            # ######     -- code --    #########
-            # elif (P[0] + P[1] + P[2]) <= rnd:
-            #     a = 3
-
-            # elif (P[0] + P[1] + P[2] + P[3]) <= rnd:
-            #     a = 4
-
-            # elif (P[0] + P[1] + P[2] + P[3] + P[4]) <= rnd:
-            #     a = 5
             try:
                 a = np.random.choice(n_actions, 1, p = P_ac)
             ###################################    
             except:
                 status = 'softMaxSelection => Boltzman distribution error => getBestAction '
-                status = status + '\r\nP = (%f , %f , %f, %f, %f, %f) ' % (P_ac[0],P_ac[1],P_ac[2],P_ac[3],P_ac[4],P_ac[5])
-                status = status + '\r\nQ(%d,:) = ( %f , %f , %f, %f, %f, %f) ' % (state_ind, Q_table[state_ind,0], Q_table[state_ind,1], Q_table[state_ind,2], Q_table[state_ind,3], Q_table[state_ind,4], Q_table[state_ind,5])
+                status = status + '\r\nP = (%f , %f , %f, %f, %f, %f, %f, %f) ' % (P_ac[0],P_ac[1],P_ac[2],P_ac[3],P_ac[4],P_ac[5], P_ac[6], P_ac[7])
+                status = status + '\r\nQ(%d,:) = ( %f , %f , %f, %f, %f, %f, %f, %f) ' % (state_ind, Q_table[state_ind,0], Q_table[state_ind,1], Q_table[state_ind,2], Q_table[state_ind,3], Q_table[state_ind,4], Q_table[state_ind,5], Q_table[state_ind,6], Q_table[state_ind,7])
                 ( a, status_gba ) = getBestAction(Q_table, state_ind, actions)
                 if status_gba == 'getBestAction => INVALID STATE INDEX':
                     status = 'softMaxSelection => INVALID STATE INDEX'
@@ -169,10 +154,13 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
         reward += +0.2
     else:
         reward += -0.2
+        
     # action and prev_action is same and action is left or right
     if action == prev_action and action in (1, 2):
         reward += -0.1
-
+    if is_goal:
+        terminal_state = True
+        reward = -100
     return (reward, terminal_state)
     
     # if crash:
