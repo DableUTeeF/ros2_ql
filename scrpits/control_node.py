@@ -170,7 +170,7 @@ class ControlNode(Node):
 
                 # Get lidar scan
                 ( lidar, angles ) = lidarScan(msgScan)
-                ( state_ind, x1, x2 ,x3 ,x4 ) = scanDiscretization(self.state_space, lidar)
+                ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
 
                 # Check for objects nearby
                 crash = checkCrash(lidar)

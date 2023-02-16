@@ -334,7 +334,7 @@ class LearningNode(Node):
                         # First acion
                         elif not self.first_action_taken:
                             ( lidar, angles ) = lidarScan(msgScan)
-                            ( state_ind, x1, x2 ,x3 ,x4 ) = scanDiscretization(self.state_space, lidar)
+                            ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
                             self.crash = checkCrash(lidar)
 
                             if EXPLORATION_FUNCTION == 1 :
@@ -361,7 +361,7 @@ class LearningNode(Node):
                         # Rest of the algorithm
                         else:
                             ( lidar, angles ) = lidarScan(msgScan)
-                            ( state_ind, x1, x2 ,x3 ,x4 ) = scanDiscretization(self.state_space, lidar)
+                            ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
                             self.crash = checkCrash(lidar)
 
                             # get position
