@@ -12,8 +12,9 @@ from geometry_msgs.msg import Twist
 import sys
 cwd = os.getcwd()
 
-DATA_PATH = '/home/palm/PycharmProjects/ros2_ql/Data'
-MODULES_PATH = '/home/palm/PycharmProjects/ros2_ql/scripts'
+
+DATA_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/Data'
+MODULES_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/scrpits'
 sys.path.insert(0, MODULES_PATH)
 
 from Qlearning import *

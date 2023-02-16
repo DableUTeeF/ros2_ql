@@ -9,8 +9,8 @@ from rclpy.node import Node
 from std_srvs.srv import Empty
 from std_srvs.srv._empty import Empty_Request
 import sys
-DATA_PATH = '/home/palm/PycharmProjects/ros2_ql/Data'
-MODULES_PATH = '/home/palm/PycharmProjects/ros2_ql/scripts'
+DATA_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/Data'
+MODULES_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/scrpits'
 sys.path.insert(0, MODULES_PATH)
 from gazebo_msgs.msg._model_state import ModelState
 from geometry_msgs.msg import Twist
@@ -51,7 +51,7 @@ THETA_INIT = 0.0
 RANDOM_INIT_POS = False
 
 # Log file directory
-LOG_FILE_DIR = DATA_PATH + '/Log_learning'
+LOG_FILE_DIR = DATA_PATH + '/Log_learning_CUSTOM'
 
 # Q table source file
 Q_SOURCE_DIR = ''
@@ -60,7 +60,7 @@ RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200.0
 CUMULATIVE_REWARD = 0.0
 
-GOAL_POSITION = (.0, .0, .0)
+GOAL_POSITION = (2.0, .8, .0)
 (GOAL_X, GOAL_Y, GOAL_THETA) = GOAL_POSITION
 GOAL_RADIUS = .06
 class LearningNode(Node):
@@ -75,9 +75,11 @@ class LearningNode(Node):
         self.reset.call_async(self.dummy_req)
         self.actions = createActions()
         self.state_space = createStateSpace()
+        print('state_space shape')
+        print(self.state_space.shape)
         self.Q_table = createQTable(len(self.state_space), len(self.actions))
         print('Initial Q-table:')
-        print(self.Q_table)
+        print(self.Q_table.shape, self.Q_table)
         # Init log files
         self.log_sim_info = open(LOG_FILE_DIR+'/LogInfo.txt','w+')
         self.log_sim_params = open(LOG_FILE_DIR+'/LogParams.txt','w+')
@@ -117,6 +119,7 @@ class LearningNode(Node):
         self.t_per_episode = np.array([])
 
         self.CUMULATIVE_REWARD = CUMULATIVE_REWARD
+        self.terminal_state = False
     
     def log_init(self):
         # Date
@@ -215,7 +218,7 @@ class LearningNode(Node):
                     self.log_sim_info.write(text+'\r\n')
                 
                 # End of Learning
-                if self.episode > MAX_EPISODES or self.terminal_state:
+                if self.episode > MAX_EPISODES :#or self.terminal_state:
                     # simulation time
                     sim_time = (self.get_clock().now() - self.t_sim_start).nanoseconds / 1e9
                     sim_time_h = sim_time // 3600
@@ -257,7 +260,7 @@ class LearningNode(Node):
                 else:
                     ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
                     # End of en Episode
-                    if self.CUMULATIVE_REWARD < REWARD_THRESHOLD :
+                    if self.CUMULATIVE_REWARD < REWARD_THRESHOLD or self.terminal_state:
                         robotStop(self.velPub)
                         # if self.crash:
                         #     # get crash position
@@ -338,6 +341,7 @@ class LearningNode(Node):
                             ( lidar, angles ) = lidarScan(msgScan)
                             ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
                             self.crash = checkCrash(lidar)
+                            print(state_ind)
 
                             if EXPLORATION_FUNCTION == 1 :
                                 ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
@@ -374,9 +378,10 @@ class LearningNode(Node):
                         
                             # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
                             # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time):
-                            ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash, (current_x, current_y), (GOAL_X, GOAL_Y), MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time , self.get_clock().nanoseconds(), GOAL_RADIUS)
-
+                            ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash, (current_x, current_y), (GOAL_X, GOAL_Y), MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time , self.get_clock().now().nanoseconds, GOAL_RADIUS)
+                            #print(reward)
                             self.CUMULATIVE_REWARD += reward
+                            print(self.CUMULATIVE_REWARD)
                             ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
 
                             if EXPLORATION_FUNCTION == 1:

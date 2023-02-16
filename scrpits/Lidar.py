@@ -57,65 +57,65 @@ def scanDiscretization(state_space, lidar):
     ###############################################################################
     ##HORIZON_WIDTH[0] --> 9 degree :x1, x2, x7 
     # Find the left side lidar values of the vehicle
-    lidar_left = min(lidar[(ANGLE_MIN):(ANGLE_MIN + HORIZON_WIDTH[0])])
-    if ZONE_1_LENGTH < lidar_left < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
+    lidar_left_x1 = min(lidar[(ANGLE_MIN):(ANGLE_MIN + HORIZON_WIDTH[0])])
+    if ZONE_1_LENGTH < lidar_left_x1 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
         x1 = 2 # zone 2
-    elif ZONE_0_LENGTH > lidar_left > ZONE_1_LENGTH:  #  1.5 < dist < 2.5
+    elif ZONE_0_LENGTH < lidar_left_x1 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
         x1 = 1 # zone 1    
-    elif lidar_left <= ZONE_0_LENGTH:  # dist <= 1.5
+    elif lidar_left_x1 <= ZONE_0_LENGTH:  # dist <= 1.5
         x1 = 0 # zone 0
 
     # Find the right side lidar values of the vehicle
-    lidar_right = min(lidar[(ANGLE_MAX - HORIZON_WIDTH[0]):(ANGLE_MAX)])
-    if ZONE_1_LENGTH < lidar_right < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
+    lidar_right_x2 = min(lidar[(ANGLE_MAX - HORIZON_WIDTH[0]):(ANGLE_MAX)])
+    if ZONE_1_LENGTH < lidar_right_x2 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
         x2 = 2 # zone 2
-    elif ZONE_0_LENGTH > lidar_right > ZONE_1_LENGTH:  #  1.5 < dist < 2.5
+    elif ZONE_0_LENGTH < lidar_right_x2 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
         x2 = 1 # zone 1    
-    elif lidar_right <= ZONE_0_LENGTH:  # dist <= 1.5
+    elif lidar_right_x2 <= ZONE_0_LENGTH:  # dist <= 1.5
         x2 = 0 # zone 0  
 
     lidar_back = min(lidar[(ANGLE_BACK - HORIZON_WIDTH[0]):(ANGLE_BACK + HORIZON_WIDTH[0])])
-    if ZONE_1_LENGTH > lidar_back > ZONE_0_LENGTH:  #  2.5 < dist < 1.5
+    if ZONE_1_LENGTH < lidar_back < ZONE_0_LENGTH:  #  2.5 < dist < 1.5
         x7 = 1 # back zone 1
     elif lidar_back <= ZONE_0_LENGTH:  # dist <= 1.5
         x7 = 0 # back zone 0
     ########################################################################################
 
     ##HORIZON_WIDTH[1] --> 16 degree :x3, x4 
-    lidar_left = min(lidar[(ANGLE_MIN + HORIZON_WIDTH[0]):(ANGLE_MIN + HORIZON_WIDTH[1])])
-    if ZONE_1_LENGTH < lidar_left < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
+    lidar_left_x3 = min(lidar[(ANGLE_MIN + HORIZON_WIDTH[0]):(ANGLE_MIN + HORIZON_WIDTH[1])])
+    if ZONE_1_LENGTH < lidar_left_x3 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
         x3 = 2 # zone 2
-    elif ZONE_0_LENGTH > lidar_left > ZONE_1_LENGTH:  #  1.5 < dist < 2.5
+    elif ZONE_0_LENGTH < lidar_left_x3 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
         x3 = 1 # zone 1    
-    elif lidar_left <= ZONE_0_LENGTH:  # dist <= 1.5
+    elif lidar_left_x3 <= ZONE_0_LENGTH:  # dist <= 1.5
         x3 = 0 # zone 0
 
     # Find the right side lidar values of the vehicle
-    lidar_right = min(lidar[(ANGLE_MAX - HORIZON_WIDTH[1]):(ANGLE_MAX - HORIZON_WIDTH[0])])
-    if ZONE_1_LENGTH < lidar_right < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
+    lidar_right_x4 = min(lidar[(ANGLE_MAX - HORIZON_WIDTH[1]):(ANGLE_MAX - HORIZON_WIDTH[0])])
+    if ZONE_1_LENGTH < lidar_right_x4 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
         x4 = 2 # zone 2
-    elif ZONE_0_LENGTH > lidar_right > ZONE_1_LENGTH:  #  1.5 < dist < 2.5
+    elif ZONE_0_LENGTH < lidar_right_x4 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
         x4 = 1 # zone 1    
-    elif lidar_right <= ZONE_0_LENGTH:  # dist <= 1.5
+    elif lidar_right_x4 <= ZONE_0_LENGTH:  # dist <= 1.5
         x4 = 0 # zone 0  
     ########################################################################################
 
     ##HORIZON_WIDTH[2] --> 25 degree :x5, x6 
-    lidar_left = min(lidar[(ANGLE_MIN + HORIZON_WIDTH[1]):(ANGLE_MIN + HORIZON_WIDTH[2])])
-    if ZONE_1_LENGTH < lidar_left < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
+    lidar_left_x5 = min(lidar[(ANGLE_MIN + HORIZON_WIDTH[1]):(ANGLE_MIN + HORIZON_WIDTH[2])])
+    if ZONE_1_LENGTH < lidar_left_x5 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
         x5 = 2 # zone 2
-    elif ZONE_0_LENGTH > lidar_left > ZONE_1_LENGTH:  #  1.5 < dist < 2.5
+    elif ZONE_0_LENGTH < lidar_left_x5 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
         x5 = 1 # zone 1    
-    elif lidar_left <= ZONE_0_LENGTH:  # dist <= 1.5
+    elif lidar_left_x5 <= ZONE_0_LENGTH:  # dist <= 1.5
         x5 = 0 # zone 0
 
     # Find the right side lidar values of the vehicle
-    lidar_right = min(lidar[(ANGLE_MAX - HORIZON_WIDTH[2]):(ANGLE_MAX - HORIZON_WIDTH[1])])
-    if ZONE_1_LENGTH < lidar_right < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
+    lidar_right_x6 = min(lidar[(ANGLE_MAX - HORIZON_WIDTH[2]):(ANGLE_MAX - HORIZON_WIDTH[1])])
+    if ZONE_1_LENGTH < lidar_right_x6 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
         x6 = 2 # zone 2
-    elif ZONE_0_LENGTH > lidar_right > ZONE_1_LENGTH:  #  1.5 < dist < 2.5
+    elif ZONE_0_LENGTH < lidar_right_x6 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
         x6 = 1 # zone 1    
-    elif lidar_right <= ZONE_0_LENGTH:  # dist <= 1.5
+    elif lidar_right_x6 <= ZONE_0_LENGTH:  # dist <= 1.5
         x6 = 0 # zone 0  
     ########################################################################################
 
@@ -178,7 +178,7 @@ def scanDiscretization(state_space, lidar):
     # elif object_front and object_right and object_far_right:
     #     x4 = 2 # sector 2
 
-    # Find the state space index of (x1,x2,x3,x4) in Q table
+    # Find the state space index of (x1,x2,x3,x4, x5, x6, x7) in Q table
     ss = np.where(np.all(state_space == np.array([x1,x2,x3,x4, x5, x6, x7]), axis = 1))
     state_ind = int(ss[0])
 

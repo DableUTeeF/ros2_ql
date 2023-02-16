@@ -7,9 +7,9 @@ from itertools import product
 from sensor_msgs.msg import LaserScan
 import time
 
-STATE_SPACE_IND_MAX = 144 - 1
+STATE_SPACE_IND_MAX = 12288 - 1
 STATE_SPACE_IND_MIN = 1 - 1
-ACTIONS_IND_MAX = 2
+ACTIONS_IND_MAX = 7
 ACTIONS_IND_MIN = 0
 
 ANGLE_MAX = 360 - 1
@@ -131,7 +131,7 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
     # add radius reduce rate for each episode
     
     # time penalty 
-    dist = np.linalg.norm(current_position - goal_position)
+    dist = np.linalg.norm(np.array(current_position) - np.array(goal_position))
     
     #  nano time diff
     time_diff = (nano_current_time - nano_start_time)
@@ -158,9 +158,9 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
     # action and prev_action is same and action is left or right
     if action == prev_action and action in (1, 2):
         reward += -0.1
-    if is_goal:
+    if dist<goal_radius:
         terminal_state = True
-        reward = -100
+        reward += 100
     return (reward, terminal_state)
     
     # if crash:
