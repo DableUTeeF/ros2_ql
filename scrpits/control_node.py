@@ -12,8 +12,8 @@ from geometry_msgs.msg import Twist
 import sys
 cwd = os.getcwd()
 
-DATA_PATH = '/home/palm/PycharmProjects/ros2_ql/Data'
-MODULES_PATH = '/home/palm/PycharmProjects/ros2_ql/scripts'
+DATA_PATH = '/root/Scamper/ros2_ql/Data'
+MODULES_PATH = '/root/Scamper/ros2_ql/scripts'
 sys.path.insert(0, MODULES_PATH)
 
 from Qlearning import *
