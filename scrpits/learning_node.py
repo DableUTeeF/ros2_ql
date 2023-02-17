@@ -64,7 +64,7 @@ LOG_FILE_DIR = DATA_PATH + '/Log_learning_CUSTOM'
 Q_SOURCE_DIR = LOG_FILE_DIR + '/Qtable.csv'
 
 RADIUS_REDUCE_RATE = .5
-REWARD_THRESHOLD =  -200.0
+REWARD_THRESHOLD =  -200
 CUMULATIVE_REWARD = 0.0
 
 GOAL_POSITION = (.03, 1.9777, .0)
@@ -86,9 +86,9 @@ parser.add_argument('--exploration_func', default=1, type=int, choices=[1, 2], h
 parser.add_argument('--resume', default=True, type=str2bool, help ="continue learning with same Qtable--> True | False")
 parser.add_argument('--n_actions_enable', default=3, type=int, help='default--> 0:forward, 1:left, 2:right,    add-on-->3:superForward, 4:backward, 5:stop, 6:CW, 7:CCW')
 
-parser.add_argument('--radiaus_reduce_rate', default=RADIUS_REDUCE_RATE, type=int)
+parser.add_argument('--radiaus_reduce_rate', default=RADIUS_REDUCE_RATE, type=float)
 parser.add_argument('--reward_threshold', default=REWARD_THRESHOLD, type=int)
-parser.add_argument('--GOAL_POSITION', default=GOAL_POSITION, nargs='+', type=int)
+parser.add_argument('--GOAL_POSITION', default=GOAL_POSITION, nargs='+', type=float)
 parser.add_argument('--GOAL_RADIUS', default=GOAL_RADIUS, type=float)
 
 
