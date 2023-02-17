@@ -25,6 +25,10 @@ from rclpy.node import Node
 from rclpy.signals import SignalHandlerGuardCondition
 from rclpy.utilities import timeout_sec_to_nsec
 
+
+
+import argparse
+
 # Episode parameters
 MAX_EPISODES = 10
 MAX_STEPS_PER_EPISODE = 500
@@ -57,16 +61,42 @@ RANDOM_INIT_POS = False
 LOG_FILE_DIR = DATA_PATH + '/Log_learning_CUSTOM'
 
 # Q table source file
-Q_SOURCE_DIR = 'ros2/ros2_ql/Qtable/QtableV1/Data/Log_learning_CUSTOM/Qtable.csv'
-USE_EXIST_Q = True
+Q_SOURCE_DIR = LOG_FILE_DIR + '/Qtable.csv'
 
 RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200.0
 CUMULATIVE_REWARD = 0.0
 
 GOAL_POSITION = (.03, 1.9777, .0)
-(GOAL_X, GOAL_Y, GOAL_THETA) = GOAL_POSITION
 GOAL_RADIUS = .06
+
+parser = argparse.ArgumentParser(description='Qtable V1')
+# Log file directory
+parser.add_argument('--log_file_dir', default = LOG_FILE_DIR, type=str, help='/Data/Log_learning_CUSTOM')
+# Q table source file
+parser.add_argument('--Q_source_dir', default = Q_SOURCE_DIR, type=str, help='/Data/Log_learning_CUSTOM/Qtable.csv')
+
+# Episode parameters
+parser.add_argument('--max_episodes', default=MAX_EPISODES, type=int, help="MAX_EPISODES = 10 (default)")
+parser.add_argument('--max_step_per_episodes', default=MAX_STEPS_PER_EPISODE, type=int, help="MAX_STEPS_PER_EPISODE = 500 (default)")
+parser.add_argument('--max_episodes_before_save', default=MAX_EPISODES_BEFORE_SAVE, type=int, help="MAX_EPISODES_BEFORE_SAVE = 5 (default)")
+
+# Learning parameters
+parser.add_argument('--exploration_func', default=1, type=int, choices=[1, 2], help="# 1 - Softmax(default) , 2 - Epsilon greedy")
+parser.add_argument('--resume', default=True, type=str2bool, help ="continue learning with same Qtable--> True | False")
+parser.add_argument('--n_actions_enable', default=3, type=int, help='default--> 0:forward, 1:left, 2:right,    add-on-->3:superForward, 4:backward, 5:stop, 6:CW, 7:CCW')
+
+parser.add_argument('--radiaus_reduce_rate', default=RADIUS_REDUCE_RATE, type=int)
+parser.add_argument('--reward_threshold', default=REWARD_THRESHOLD, type=int)
+parser.add_argument('--GOAL_POSITION', default=GOAL_POSITION, nargs='+', type=int)
+parser.add_argument('--GOAL_RADIUS', default=GOAL_RADIUS, type=float)
+
+
+args = parser.parse_args()
+
+(GOAL_X, GOAL_Y, GOAL_THETA) = tuple(args.GOAL_POSITION)
+
+
 class LearningNode(Node):
     def __init__(self):
         super().__init__('learning_node')
@@ -77,14 +107,14 @@ class LearningNode(Node):
         self.velPub = self.create_publisher(Twist, 'cmd_vel', 10)
         self.dummy_req = Empty_Request()
         self.reset.call_async(self.dummy_req)
-        self.actions = createActions()
+        self.actions = createActions(args.n_actions_enable)
         self.state_space = createStateSpace()
         print('state_space shape')
         print(self.state_space.shape)
         self.Q_table = createQTable(len(self.state_space), len(self.actions))
 
-        if USE_EXIST_Q: 
-            self.Q_table = pd.read_csv(Q_SOURCE_DIR, header=None)
+        if args.resume: 
+            self.Q_table = pd.read_csv(args.Q_source_dir, header=None)
             self.Q_table = self.Q_table.to_numpy()
         else:
             self.Q_table = createQTable(len(self.state_space), len(self.actions))
@@ -92,8 +122,8 @@ class LearningNode(Node):
         print('Initial Q-table:')
         print(self.Q_table.shape, self.Q_table)
         # Init log files
-        self.log_sim_info = open(LOG_FILE_DIR+'/LogInfo.txt','w+')
-        self.log_sim_params = open(LOG_FILE_DIR+'/LogParams.txt','w+')
+        self.log_sim_info = open(args.log_file_dir +'/LogInfo.txt','w+')
+        self.log_sim_params = open(args.log_file_dir +'/LogParams.txt','w+')
         # Learning parameters
         self.T = T_INIT
         self.EPSILON = EPSILON_INIT
@@ -152,13 +182,13 @@ class LearningNode(Node):
         else:
             text = text + 'INITIAL POSITION = ( %.2f , %.2f , %.2f ) \r\n' % (X_INIT,Y_INIT,THETA_INIT)
         text = text + '--------------------------------------- \r\n'
-        text = text + 'MAX_EPISODES = %d \r\n' % MAX_EPISODES
-        text = text + 'MAX_STEPS_PER_EPISODE = %d \r\n' % MAX_STEPS_PER_EPISODE
+        text = text + 'MAX_EPISODES = %d \r\n' % args.max_episodes
+        text = text + 'MAX_STEPS_PER_EPISODE = %d \r\n' % args.max_step_per_episodes
         text = text + 'MIN_TIME_BETWEEN_ACTIONS = %.2f s \r\n' % MIN_TIME_BETWEEN_ACTIONS
         text = text + '--------------------------------------- \r\n'
         text = text + 'ALPHA = %.2f \r\n' % ALPHA
         text = text + 'GAMMA = %.2f \r\n' % GAMMA
-        if EXPLORATION_FUNCTION == 1:
+        if args.exploration_func == 1:
             text = text + 'T_INIT = %.3f \r\n' % T_INIT
             text = text + 'T_GRAD = %.3f \r\n' % T_GRAD
             text = text + 'T_MIN = %.3f \r\n' % T_MIN
@@ -221,16 +251,16 @@ class LearningNode(Node):
     
     def save_info_csv(self):
         print('writing to csv...')
-        saveQTable(LOG_FILE_DIR+'/Qtable.csv', self.Q_table)
-        np.savetxt(LOG_FILE_DIR+'/StateSpace.csv', self.state_space, '%d')
-        np.savetxt(LOG_FILE_DIR+'/steps_per_episode.csv', self.steps_per_episode, delimiter = ' , ')
-        np.savetxt(LOG_FILE_DIR+'/reward_per_episode.csv', self.reward_per_episode, delimiter = ' , ')
-        np.savetxt(LOG_FILE_DIR+'/T_per_episode.csv', self.T_per_episode, delimiter = ' , ')
-        np.savetxt(LOG_FILE_DIR+'/EPSILON_per_episode.csv', self.EPSILON_per_episode, delimiter = ' , ')
-        np.savetxt(LOG_FILE_DIR+'/reward_min_per_episode.csv', self.reward_min_per_episode, delimiter = ' , ')
-        np.savetxt(LOG_FILE_DIR+'/reward_max_per_episode.csv', self.reward_max_per_episode, delimiter = ' , ')
-        np.savetxt(LOG_FILE_DIR+'/reward_avg_per_episode.csv', self.reward_avg_per_episode, delimiter = ' , ')
-        np.savetxt(LOG_FILE_DIR+'/t_per_episode.csv', self.t_per_episode, delimiter = ' , ')
+        saveQTable(args.log_file_dir+'/Qtable.csv', self.Q_table)
+        np.savetxt(args.log_file_dir+'/StateSpace.csv', self.state_space, '%d')
+        np.savetxt(args.log_file_dir+'/steps_per_episode.csv', self.steps_per_episode, delimiter = ' , ')
+        np.savetxt(args.log_file_dir+'/reward_per_episode.csv', self.reward_per_episode, delimiter = ' , ')
+        np.savetxt(args.log_file_dir+'/T_per_episode.csv', self.T_per_episode, delimiter = ' , ')
+        np.savetxt(args.log_file_dir+'/EPSILON_per_episode.csv', self.EPSILON_per_episode, delimiter = ' , ')
+        np.savetxt(args.log_file_dir+'/reward_min_per_episode.csv', self.reward_min_per_episode, delimiter = ' , ')
+        np.savetxt(args.log_file_dir+'/reward_max_per_episode.csv', self.reward_max_per_episode, delimiter = ' , ')
+        np.savetxt(args.log_file_dir+'/reward_avg_per_episode.csv', self.reward_avg_per_episode, delimiter = ' , ')
+        np.savetxt(args.log_file_dir+'/t_per_episode.csv', self.t_per_episode, delimiter = ' , ')
 
     def timer_callback(self):
             _, msgScan = self.wait_for_message('/scan', LaserScan)
@@ -247,7 +277,7 @@ class LearningNode(Node):
                 self.log_sim_info.write(text+'\r\n')
             
             # End of Learning
-            if self.episode > MAX_EPISODES :#or self.terminal_state:
+            if self.episode > args.max_episodes :#or self.terminal_state:
                 # simulation time
                 self.is_set_pos = False
                 
@@ -258,18 +288,18 @@ class LearningNode(Node):
                 sim_time_s = sim_time - sim_time_h * 3600 - sim_time_m * 60
 
                 # real time
-                # now_stop = datetime.now()
+                now_stop = datetime.now()
                 # dt_string_stop = now_stop.strftime("%d/%m/%Y %H:%M:%S")
-                # real_time_delta = (now_stop - self.now_start).total_seconds()
-                # real_time_h = real_time_delta // 3600
-                # real_time_m = ( real_time_delta - real_time_h * 3600 ) // 60
-                # real_time_s = real_time_delta - real_time_h * 3600 - real_time_m * 60
+                real_time_delta = (now_stop - self.now_start).total_seconds()
+                real_time_h = real_time_delta // 3600
+                real_time_m = ( real_time_delta - real_time_h * 3600 ) // 60
+                real_time_s = real_time_delta - real_time_h * 3600 - real_time_m * 60
 
                 # Log learning session info to file
                 text = '--------------------------------------- \r\n\r\n'
-                text = text + 'MAX EPISODES REACHED(%d), LEARNING FINISHED' % MAX_EPISODES + '\r\n'
+                text = text + 'MAX EPISODES REACHED(%d), LEARNING FINISHED' % args.max_episodes + '\r\n'
                 text = text + 'Simulation time: %d:%d:%d  h/m/s \r\n' % (sim_time_h, sim_time_m, sim_time_s)
-                # text = text + 'Real time: %d:%d:%d  h/m/s \r\n' % (real_time_h, real_time_m, real_time_s)
+                text = text + 'Real time: %d:%d:%d  h/m/s \r\n' % (real_time_h, real_time_m, real_time_s)
                 print(text)
                 self.log_sim_info.write('\r\n'+text+'\r\n')
                 self.log_sim_params.write(text+'\r\n')
@@ -285,7 +315,7 @@ class LearningNode(Node):
                 ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
                 # End of en Episode
                 
-                if self.CUMULATIVE_REWARD < REWARD_THRESHOLD or self.terminal_state:
+                if self.CUMULATIVE_REWARD < args.reward_threshold or self.terminal_state:
                     robotStop(self.velPub)
                     print("End of episode. step: ", self.ep_steps)
                     print('Cumulative result: ', self.CUMULATIVE_REWARD)
@@ -299,8 +329,8 @@ class LearningNode(Node):
                     self.reward_min = np.min(self.ep_reward_arr)
                     self.reward_max = np.max(self.ep_reward_arr)
                     self.reward_avg = np.mean(self.ep_reward_arr)
-                    now = datetime.now()
-                    dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
+                    # now = datetime.now()
+                    # dt_string = now.strftime("%d/%m/%Y %H:%M:%S")
                     text = '---------------------------------------\r\n'
                     # if self.terminal_state:
                     #     text = text + '\r\nEpisode %d ==> CRASH {%.2f,%.2f,%.2f}    ' % (self.episode, x_crash, y_crash, theta_crash) + dt_string
@@ -313,7 +343,7 @@ class LearningNode(Node):
                     text = text + 'episode steps: %d \r\n' % self.ep_steps
                     text = text + 'episode reward: %.2f \r\n' % self.ep_reward
                     text = text + 'episode max | avg | min reward: %.2f | %.2f | %.2f \r\n' % (self.reward_max, self.reward_avg, self.reward_min)
-                    if EXPLORATION_FUNCTION == 1:
+                    if args.exploration_func == 1:
                         text = text + 'T = %f \r\n' % self.T
                     else:
                         text = text + 'EPSILON = %f \r\n' % self.EPSILON
@@ -343,8 +373,8 @@ class LearningNode(Node):
                         self.EPSILON = EPSILON_GRAD * self.EPSILON
 
                     # save to csv every n episodes
-                    if self.episode % MAX_EPISODES_BEFORE_SAVE == 0:
-                        print(f"saving data to csv every {MAX_EPISODES_BEFORE_SAVE} episodes")
+                    if self.episode % args.max_episodes_before_save == 0:
+                        print(f"saving data to csv every {args.max_episodes_before_save} episodes")
                         self.save_info_csv()
 
 
@@ -384,7 +414,7 @@ class LearningNode(Node):
                         ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
                         self.crash = checkCrash(lidar)
 
-                        if EXPLORATION_FUNCTION == 1 :
+                        if args.exploration_func == 1 :
                             ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
                         else:
                             ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.T)
@@ -418,19 +448,19 @@ class LearningNode(Node):
                         MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])
                     
                         # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
-                        # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time):
+                        # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, args.radiaus_reduce_rate, nano_start_time, nano_current_time):
                         ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash,
                                                                    (current_x, current_y), self.prev_position, (GOAL_X, GOAL_Y), 
-                                                                    MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time ,
+                                                                    MAX_RADIUS, args.radiaus_reduce_rate, ep_time ,
                                                                     self.get_clock().now().nanoseconds, 
-                                                                    GOAL_RADIUS)
+                                                                    args.GOAL_RADIUS)
                         self.prev_position = (current_x, current_y)
                         self.CUMULATIVE_REWARD += reward
                         print('CUMULATIVE_REWARD: ', self.CUMULATIVE_REWARD)
                         # print("time: ", self.get_clock().now().nanoseconds)
                         ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
 
-                        if EXPLORATION_FUNCTION == 1:
+                        if args.exploration_func == 1:
                             ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
                         else:
                             ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.T)

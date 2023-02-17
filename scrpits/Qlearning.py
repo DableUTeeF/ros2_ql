@@ -19,8 +19,9 @@ HORIZON_WIDTH = 75
 T_MIN = 0.001
 
 # Create actions
-def createActions():
-    actions = np.array([0,1,2,3,4,5,6,7])
+def createActions(n_actions_enable):
+    # actions = np.array([0,1,2,3,4,5,6,7])
+    actions = np.arange(n_actions_enable)
     return actions
 # forward, left, right,  superForward, backward, stop, CW, CCW
 
