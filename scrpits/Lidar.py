@@ -5,18 +5,18 @@ from math import *
 from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 
-MAX_LIDAR_DISTANCE = 3.5
+MAX_LIDAR_DISTANCE = .8
 COLLISION_DISTANCE = 0.14 # LaserScan.range_min = 0.1199999
 NEARBY_DISTANCE = 0.45
 
-ZONE_0_LENGTH = 1.5
-ZONE_1_LENGTH = 2.5
+ZONE_0_LENGTH = .25
+ZONE_1_LENGTH = .5
 
 ANGLE_MAX = 360 - 1 #359  degree
 ANGLE_MIN = 1 - 1   #0 degree
 ANGLE_BACK = 180  #180 degree
 # HORIZON_WIDTH = 75  #original
-HORIZON_WIDTH = [9, 16, 25] #9:x1, x2, x7   16:x3, x4   25:x5, x6 
+HORIZON_WIDTH = [9, 16, 56, 9] #9:x1, x2, x7   16:x3, x4   25:x5, x6 
 
 # Convert LasecScan msg to array
 def lidarScan(msgScan):
@@ -42,147 +42,108 @@ def lidarScan(msgScan):
     return ( distances, angles )
 
 # Discretization of lidar scan
-def scanDiscretization(state_space, lidar):
-    x1 = 3 # Left sector (no obstacle detected)
-    x2 = 3 # Right sector (no obstacle detected)
+def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_direction, robot_prev_pose, max_dist):
+    x1 = 1  # no obstacle
+    x2 = 1
+    x3 = 2
+    x4 = 3
+    x5 = 3
+    x6 = 2 
+    x7 = 1
+    x8 = 1
+    
+    lidar_x1 = min(lidar[81: 91])
+    if ZONE_0_LENGTH < lidar_x1 < ZONE_1_LENGTH:
+        x1 = 0
+    
+    lidar_x2 = min(lidar[25: 91])
+    if ZONE_0_LENGTH > lidar_x2:
+        x2 = 0
 
-    x3 = 3 # Left sector (no obstacle detected)
-    x4 = 3 # Right sector (no obstacle detected)
+    lidar_x3 = min(lidar[9: 26])
+    if ZONE_1_LENGTH < lidar_x3:
+        x3 = 2
+    elif ZONE_0_LENGTH < lidar_x3 < ZONE_1_LENGTH:
+        x3 = 1
+    elif lidar_x3 < ZONE_0_LENGTH:
+        x3 = 0
 
-    x5 = 3 # Left sector (no obstacle detected)
-    x6 = 3 # Right sector (no obstacle detected)
+    lidar_x4 = min(lidar[0: 10])
+    if MAX_LIDAR_DISTANCE < lidar_x4:
+        x4 = 3
+    elif ZONE_1_LENGTH < lidar_x4:
+        x4 = 2
+    elif ZONE_0_LENGTH < lidar_x4 < ZONE_1_LENGTH:
+        x4 = 1
+    elif lidar_x4 < ZONE_0_LENGTH:
+        x4 = 0
 
-    x7 = 2 # Back zone (no obstacle detected)
+    # from index 351 to 0
+    lidar_x5 = min(lidar[350: 360] + lidar[0])
+    if MAX_LIDAR_DISTANCE < lidar_x5:
+        x5 = 3
+    elif ZONE_1_LENGTH < lidar_x5:
+        x5 = 2
+    elif ZONE_0_LENGTH < lidar_x5 < ZONE_1_LENGTH:
+        x5 = 1
+    elif lidar_x4 < ZONE_0_LENGTH:
+        x5 = 0
 
-    ###############################################################################
-    ##HORIZON_WIDTH[0] --> 9 degree :x1, x2, x7 
-    # Find the left side lidar values of the vehicle
-    lidar_left_x1 = min(lidar[(ANGLE_MIN):(ANGLE_MIN + HORIZON_WIDTH[0])])
-    if ZONE_1_LENGTH < lidar_left_x1 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
-        x1 = 2 # zone 2
-    elif ZONE_0_LENGTH < lidar_left_x1 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
-        x1 = 1 # zone 1    
-    elif lidar_left_x1 <= ZONE_0_LENGTH:  # dist <= 1.5
-        x1 = 0 # zone 0
+    lidar_x6 = min(lidar[335: 351])
+    if ZONE_1_LENGTH < lidar_x6:
+        x6 = 2
+    elif ZONE_0_LENGTH < lidar_x6 < ZONE_1_LENGTH:
+        x6 = 1
+    elif lidar_x6 < ZONE_0_LENGTH:
+        x6 = 0
 
-    # Find the right side lidar values of the vehicle
-    lidar_right_x2 = min(lidar[(ANGLE_MAX - HORIZON_WIDTH[0]):(ANGLE_MAX)])
-    if ZONE_1_LENGTH < lidar_right_x2 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
-        x2 = 2 # zone 2
-    elif ZONE_0_LENGTH < lidar_right_x2 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
-        x2 = 1 # zone 1    
-    elif lidar_right_x2 <= ZONE_0_LENGTH:  # dist <= 1.5
-        x2 = 0 # zone 0  
+    lidar_x7 = min(lidar[270: 335])
+    if ZONE_0_LENGTH > lidar_x7:
+        x7 = 0
 
-    lidar_back = min(lidar[(ANGLE_BACK - HORIZON_WIDTH[0]):(ANGLE_BACK + HORIZON_WIDTH[0])])
-    if ZONE_1_LENGTH < lidar_back < ZONE_0_LENGTH:  #  2.5 < dist < 1.5
-        x7 = 1 # back zone 1
-    elif lidar_back <= ZONE_0_LENGTH:  # dist <= 1.5
-        x7 = 0 # back zone 0
-    ########################################################################################
+    lidar_x8 = min(lidar[270: 279])
+    if ZONE_0_LENGTH < lidar_x8 < ZONE_1_LENGTH:
+        x8 = 0
 
-    ##HORIZON_WIDTH[1] --> 16 degree :x3, x4 
-    lidar_left_x3 = min(lidar[(ANGLE_MIN + HORIZON_WIDTH[0]):(ANGLE_MIN + HORIZON_WIDTH[1])])
-    if ZONE_1_LENGTH < lidar_left_x3 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
-        x3 = 2 # zone 2
-    elif ZONE_0_LENGTH < lidar_left_x3 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
-        x3 = 1 # zone 1    
-    elif lidar_left_x3 <= ZONE_0_LENGTH:  # dist <= 1.5
-        x3 = 0 # zone 0
+    # distance
+    
+    dist = np.linalg.norm(target_pos - robot_pose)
 
-    # Find the right side lidar values of the vehicle
-    lidar_right_x4 = min(lidar[(ANGLE_MAX - HORIZON_WIDTH[1]):(ANGLE_MAX - HORIZON_WIDTH[0])])
-    if ZONE_1_LENGTH < lidar_right_x4 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
-        x4 = 2 # zone 2
-    elif ZONE_0_LENGTH < lidar_right_x4 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
-        x4 = 1 # zone 1    
-    elif lidar_right_x4 <= ZONE_0_LENGTH:  # dist <= 1.5
-        x4 = 0 # zone 0  
-    ########################################################################################
+    if dist > .5 * max_dist:
+        x9 = 2
+    elif dist > .1:
+        x9 = 1
+    else:
+        x9 = 0
+    
+    robot_pose = np.array([robot_pose[0], robot_pose[1]])
+    robot_prev_pose = np.array([robot_prev_pose[0], robot_prev_pose[1]])
+    target_pos = np.array([target_pos[0], target_pos[1]])
 
-    ##HORIZON_WIDTH[2] --> 25 degree :x5, x6 
-    lidar_left_x5 = min(lidar[(ANGLE_MIN + HORIZON_WIDTH[1]):(ANGLE_MIN + HORIZON_WIDTH[2])])
-    if ZONE_1_LENGTH < lidar_left_x5 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
-        x5 = 2 # zone 2
-    elif ZONE_0_LENGTH < lidar_left_x5 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
-        x5 = 1 # zone 1    
-    elif lidar_left_x5 <= ZONE_0_LENGTH:  # dist <= 1.5
-        x5 = 0 # zone 0
+    #  vector from robot to target
+    d_vec = target_pos - robot_pose
+    #  vexor from robot to robot_prev
+    v_vec = robot_pose - robot_prev_pose
 
-    # Find the right side lidar values of the vehicle
-    lidar_right_x6 = min(lidar[(ANGLE_MAX - HORIZON_WIDTH[2]):(ANGLE_MAX - HORIZON_WIDTH[1])])
-    if ZONE_1_LENGTH < lidar_right_x6 < MAX_LIDAR_DISTANCE:  #  2.5 < dist < 3.5
-        x6 = 2 # zone 2
-    elif ZONE_0_LENGTH < lidar_right_x6 < ZONE_1_LENGTH:  #  1.5 < dist < 2.5
-        x6 = 1 # zone 1    
-    elif lidar_right_x6 <= ZONE_0_LENGTH:  # dist <= 1.5
-        x6 = 0 # zone 0  
-    ########################################################################################
+    d_vec3d = np.array([d_vec[0], d_vec[1], 0])
+    v_vec3d = np.array([v_vec[0], v_vec[1], 0])
+
+    if np.dot(d_vec, v_vec) < 0:
+        x10 = 0 # going back
+    else:
+        if np.arcos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec))) < np.arcsin(0.1)/dist:
+            x10 = 1 # going to target
+        elif np.cross(d_vec3d, v_vec3d)[2] < 0:
+            x10 = 2  # too much right
+        else:
+            x10 = 3 # too much left
+       
 
 
-    # Find the left side lidar values of the vehicle
-    # lidar_left = min(lidar[(ANGLE_MIN):(ANGLE_MIN + HORIZON_WIDTH)])
-    #if ZONE_1_LENGTH > lidar_left > ZONE_0_LENGTH:
-    #    x1 = 1 # zone 1
-    #elif lidar_left <= ZONE_0_LENGTH:
-    #    x1 = 0 # zone 0
-
-    # Find the right side lidar values of the vehicle
-    #lidar_right = min(lidar[(ANGLE_MAX - HORIZON_WIDTH):(ANGLE_MAX)])
-    #if ZONE_1_LENGTH > lidar_right > ZONE_0_LENGTH:
-    #    x2 = 1 # zone 1
-    #elif lidar_right <= ZONE_0_LENGTH:
-    #    x2 = 0 # zone 0
-    # Detection of object in front of the robot
-    #if ( min(lidar[(ANGLE_MAX - HORIZON_WIDTH // 3):(ANGLE_MAX)]) < 1.0 ) or ( min(lidar[(ANGLE_MIN):(ANGLE_MIN + HORIZON_WIDTH // 3)]) < 1.0 ):
-    #    object_front = True
-    #else:
-    #    object_front = False
-
-    # Detection of object on the left side of the robot
-    # if min(lidar[(ANGLE_MIN):(ANGLE_MIN + 2 * HORIZON_WIDTH // 3)]) < 1.0:
-    #     object_left = True
-    # else:
-    #     object_left = False
-
-    # Detection of object on the right side of the robot
-    # if min(lidar[(ANGLE_MAX - 2 * HORIZON_WIDTH // 3):(ANGLE_MAX)]) < 1.0:
-    #     object_right = True
-    # else:
-    #     object_right = False
-
-    # # Detection of object on the far left side of the robot
-    # if min(lidar[(ANGLE_MIN + HORIZON_WIDTH // 3):(ANGLE_MIN + HORIZON_WIDTH)]) < 1.0:
-    #     object_far_left = True
-    # else:
-    #     object_far_left = False
-
-    # # Detection of object on the far right side of the robot
-    # if min(lidar[(ANGLE_MAX - HORIZON_WIDTH):(ANGLE_MAX - HORIZON_WIDTH // 3)]) < 1.0:
-    #     object_far_right = True
-    # else:
-    #     object_far_right = False
-
-    # # The left sector of the vehicle
-    # if ( object_front and object_left ) and ( not object_far_left ):
-    #     x3 = 0 # sector 0
-    # elif ( object_left and object_far_left ) and ( not object_front ):
-    #     x3 = 1 # sector 1
-    # elif object_front and object_left and object_far_left:
-    #     x3 = 2 # sector 2
-
-    # if ( object_front and object_right ) and ( not object_far_right ):
-    #     x4 = 0 # sector 0
-    # elif ( object_right and object_far_right ) and ( not object_front ):
-    #     x4 = 1 # sector 1
-    # elif object_front and object_right and object_far_right:
-    #     x4 = 2 # sector 2
-
-    # Find the state space index of (x1,x2,x3,x4, x5, x6, x7) in Q table
-    ss = np.where(np.all(state_space == np.array([x1,x2,x3,x4, x5, x6, x7]), axis = 1))
+    ss = np.where(np.all(state_space == np.array([x1,x2,x3,x4, x5, x6, x7, x8, x9, x10]), axis = 1))
     state_ind = int(ss[0])
 
-    return ( state_ind, x1, x2, x3 , x4 , x5, x6, x7)
+    return ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10)
 
 # Check - crash
 def checkCrash(lidar):

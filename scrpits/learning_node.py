@@ -280,7 +280,7 @@ class LearningNode(Node):
             if self.episode > args.max_episodes :#or self.terminal_state:
                 # simulation time
                 self.is_set_pos = False
-                
+                self.MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])
                 print(self.episode)
                 sim_time = (self.get_clock().now() - self.t_sim_start).nanoseconds / 1e9
                 sim_time_h = sim_time // 3600
@@ -411,7 +411,7 @@ class LearningNode(Node):
                     # First acion
                     elif not self.first_action_taken:
                         ( lidar, angles ) = lidarScan(msgScan)
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (x_init, y_init), (GOAL_X, GOAL_Y),self.prev_position, self.MAX_RADIUS)
                         self.crash = checkCrash(lidar)
 
                         if args.exploration_func == 1 :
@@ -438,22 +438,23 @@ class LearningNode(Node):
                     # Rest of the algorithm
                     else:
                         ( lidar, angles ) = lidarScan(msgScan)
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
+                        yaw = getRotation(odomMsg)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (x_init, y_init), (GOAL_X, GOAL_Y),self.prev_position, self.MAX_RADIUS)
                         self.crash = checkCrash(lidar)
 
                         # get position
                         _, odomMsg = self.wait_for_message('/odom', Odometry)
                         ( current_x , current_y ) = getPosition(odomMsg)
                         # radius caculated by norm of  and goal position
-                        MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])
+                        
                     
                         # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
                         # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, args.radiaus_reduce_rate, nano_start_time, nano_current_time):
                         ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash,
                                                                    (current_x, current_y), self.prev_position, (GOAL_X, GOAL_Y), 
-                                                                    MAX_RADIUS, args.radiaus_reduce_rate, ep_time ,
+                                                                    self.MAX_RADIUS, args.radiaus_reduce_rate, ep_time ,
                                                                     self.get_clock().now().nanoseconds, 
-                                                                    args.GOAL_RADIUS)
+                                                                    args.GOAL_RADIUS, x10)
                         self.prev_position = (current_x, current_y)
                         self.CUMULATIVE_REWARD += reward
                         print('CUMULATIVE_REWARD: ', self.CUMULATIVE_REWARD)
