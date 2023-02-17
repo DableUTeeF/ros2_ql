@@ -183,9 +183,9 @@ def robotDoAction(velPub, action):
     elif action == 5:
         robotStop(velPub)   
     elif action == 6:
-        robotCW(velPub)
+        robotCCW(velPub) 
     elif action == 7:
-        robotCCW(velPub)       
+        robotCW(velPub)  
     else:
         status = 'robotDoAction => INVALID ACTION'
         robotGoForward(velPub)

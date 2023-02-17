@@ -116,7 +116,10 @@ def softMaxSelection(Q_table, state_ind, actions, T):
     return ( a, status )
 
 # Reward function for Q-learning - table
-def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time, goal_radius):
+def getReward(action, prev_action,lidar, prev_lidar, crash, 
+                current_position, prev_position, goal_position,
+                max_radius, radius_reduce_rate, nano_start_time, 
+                nano_current_time, goal_radius):
 
     terminal_state = False
     # init reward
@@ -145,7 +148,8 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
         reward += - .69
 
     if crash:
-        reward += -100
+        reward += -200
+        terminal_state = True
     lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + HORIZON_WIDTH):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - HORIZON_WIDTH):-1]))
     prev_lidar_horizon = np.concatenate((prev_lidar[(ANGLE_MIN + HORIZON_WIDTH):(ANGLE_MIN):-1],prev_lidar[(ANGLE_MAX):(ANGLE_MAX - HORIZON_WIDTH):-1]))
     W = np.linspace(0.9, 1.1, len(lidar_horizon) // 2)
@@ -156,11 +160,22 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
         reward += -0.2
         
     # action and prev_action is same and action is left or right
-    if action == prev_action and action in (1, 2):
-        reward += -0.1
+
+    # if action == prev_action and action in (1, 2):
+    #     reward += -0.1
+    if prev_action in (1,6) and action in (2,7):
+            reward += -1
+    if prev_action in (2,7) and action in (1,6):
+            reward += -1
+    
     if dist<goal_radius:
-        terminal_state = True
         reward += 100
+        terminal_state = True
+
+    if abs(current_position[0] -prev_position[0]) < 0.01 and abs(current_position[1] -prev_position[1]) < 0.01:
+        # reward += -200
+        terminal_state = True
+    
     return (reward, terminal_state)
     
     # if crash:
@@ -168,7 +183,7 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
     #     reward = -100
     # else:
     #     lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + HORIZON_WIDTH):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - HORIZON_WIDTH):-1]))
-    #     prev_lidar_horizon = np.concatenate((prev_lidar[(ANGLE_MIN + HORIZON_WIDTH):(ANGLE_MIN):-1],prev_lidar[(ANGLE_MAX):(ANGLE_MAX - HORIZON_WIDTH):-1]))
+    #     prev_lidar_horizon = np.concatenate((prev_lidar[(ANGLE_IN + HORIZON_WIDTH):(ANGLE_MIN):-1],prev_lidar[(ANGLE_MAX):(ANGLE_MAX - HORIZON_WIDTH):-1]))
     #     terminal_state = False
     #     # Reward from action taken = fowrad -> +0.2 , turn -> -0.1
     #     if action == 0:

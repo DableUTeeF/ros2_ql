@@ -13,8 +13,8 @@ import sys
 cwd = os.getcwd()
 
 
-DATA_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/Data'
-MODULES_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/scrpits'
+DATA_PATH = 'ros2/ros2_ql/Qtable/QtableV1/Data'
+MODULES_PATH = 'ros2/ros2_ql/Qtable/QtableV1/scrpits'
 sys.path.insert(0, MODULES_PATH)
 
 from Qlearning import *

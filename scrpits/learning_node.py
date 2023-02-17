@@ -7,10 +7,12 @@ from datetime import datetime
 import matplotlib.pyplot as plt
 from rclpy.node import Node
 from std_srvs.srv import Empty
+import pandas as pd
 from std_srvs.srv._empty import Empty_Request
 import sys
-DATA_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/Data'
-MODULES_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/scrpits'
+DATA_PATH = 'ros2/ros2_ql/Qtable/QtableV1/Data'
+MODULES_PATH = 'ros2/ros2_ql/Qtable/QtableV1/scrpits'
+
 sys.path.insert(0, MODULES_PATH)
 from gazebo_msgs.msg._model_state import ModelState
 from geometry_msgs.msg import Twist
@@ -55,7 +57,8 @@ RANDOM_INIT_POS = False
 LOG_FILE_DIR = DATA_PATH + '/Log_learning_CUSTOM'
 
 # Q table source file
-Q_SOURCE_DIR = ''
+Q_SOURCE_DIR = 'ros2/ros2_ql/Qtable/QtableV1/Data/Log_learning_CUSTOM/Qtable.csv'
+USE_EXIST_Q = True
 
 RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200.0
@@ -79,6 +82,13 @@ class LearningNode(Node):
         print('state_space shape')
         print(self.state_space.shape)
         self.Q_table = createQTable(len(self.state_space), len(self.actions))
+
+        if USE_EXIST_Q: 
+            self.Q_table = pd.read_csv(Q_SOURCE_DIR, header=None)
+            self.Q_table = self.Q_table.to_numpy()
+        else:
+            self.Q_table = createQTable(len(self.state_space), len(self.actions))
+        
         print('Initial Q-table:')
         print(self.Q_table.shape, self.Q_table)
         # Init log files
@@ -94,12 +104,12 @@ class LearningNode(Node):
         self.ep_reward = 0
         self.episode = 1
         self.crash = 0
-        self.reward_max_per_episode = np.array([])
-        self.reward_min_per_episode = np.array([])
-        self.reward_avg_per_episode = np.array([])
-        self.ep_reward_arr = np.array([])
-        self.steps_per_episode = np.array([])
-        self.reward_per_episode = np.array([])
+        self.reward_max_per_episode = np.array([0])
+        self.reward_min_per_episode = np.array([0])
+        self.reward_avg_per_episode = np.array([0])
+        self.ep_reward_arr = np.array([0])
+        self.steps_per_episode = np.array([0])
+        self.reward_per_episode = np.array([0])
         # initial position
         self.robot_in_pos = False
         self.first_action_taken = False
@@ -115,9 +125,9 @@ class LearningNode(Node):
         self.t_sim_start = self.t_start
         self.t_step = self.t_start
 
-        self.T_per_episode = np.array([])
-        self.EPSILON_per_episode = np.array([])
-        self.t_per_episode = np.array([])
+        self.T_per_episode = np.array([0])
+        self.EPSILON_per_episode = np.array([0])
+        self.t_per_episode = np.array([0])
 
         self.CUMULATIVE_REWARD = CUMULATIVE_REWARD
         self.terminal_state = False
@@ -227,6 +237,7 @@ class LearningNode(Node):
 
             # find time taken betwwen 2 callbacks
             step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
+            self.prev_position = (999, 999)
 
             #if step_time > MIN_TIME_BETWEEN_ACTIONS:
             self.t_step = self.get_clock().now()
@@ -239,6 +250,7 @@ class LearningNode(Node):
             if self.episode > MAX_EPISODES :#or self.terminal_state:
                 # simulation time
                 self.is_set_pos = False
+                
                 print(self.episode)
                 sim_time = (self.get_clock().now() - self.t_sim_start).nanoseconds / 1e9
                 sim_time_h = sim_time // 3600
@@ -275,6 +287,8 @@ class LearningNode(Node):
                 
                 if self.CUMULATIVE_REWARD < REWARD_THRESHOLD or self.terminal_state:
                     robotStop(self.velPub)
+                    print("End of episode. step: ", self.ep_steps)
+                    print('Cumulative result: ', self.CUMULATIVE_REWARD)
                     # if self.crash:
                     #     # get crash position
                     #     _, odomMsg = self.wait_for_message('/odom', Odometry)
@@ -295,7 +309,7 @@ class LearningNode(Node):
                     #     text = text + '\r\nEpisode %d ==> MAX STEPS PER EPISODE REACHED {%d}    ' % (self.episode, MAX_STEPS_PER_EPISODE) + dt_string
                     # else:
                     #     text = text + '\r\nEpisode %d ==> UNKNOWN TERMINAL CASE    ' % self.episode + dt_string
-                    text = text + '\r\nepisode time: %.2f s (avg step: %.2f s) \r\n' % (ep_time, ep_time / self.ep_steps)
+                    text = text + '\r\nepisode time: %.2f s (avg step: %.2f s) \r\n' % (ep_time, ep_time / (self.ep_steps))
                     text = text + 'episode steps: %d \r\n' % self.ep_steps
                     text = text + 'episode reward: %.2f \r\n' % self.ep_reward
                     text = text + 'episode max | avg | min reward: %.2f | %.2f | %.2f \r\n' % (self.reward_max, self.reward_avg, self.reward_min)
@@ -314,7 +328,7 @@ class LearningNode(Node):
                     self.reward_min_per_episode = np.append(self.reward_min_per_episode, self.reward_min)
                     self.reward_max_per_episode = np.append(self.reward_max_per_episode, self.reward_max)
                     self.reward_avg_per_episode = np.append(self.reward_avg_per_episode, self.reward_avg)
-                    self.ep_reward_arr = np.array([])
+                    self.ep_reward_arr = np.array([0])
                     self.ep_steps = 0
                     self.ep_reward = 0
                     # cum reward reset
@@ -322,6 +336,7 @@ class LearningNode(Node):
                     self.crash = 0
                     self.robot_in_pos = False
                     self.first_action_taken = False
+                    self.terminal_state = False
                     if self.T > T_MIN:
                         self.T = T_GRAD * self.T
                     if self.EPSILON > EPSILON_MIN:
@@ -336,22 +351,25 @@ class LearningNode(Node):
                     self.episode = self.episode + 1
                 else:
                     self.ep_steps = self.ep_steps + 1
+                    print(self.ep_steps)
                     # Initial position
                     if not self.is_set_pos:
+                        _, odomMsg = self.wait_for_message('/odom', Odometry)
                         robotStop(self.velPub)
                         self.ep_steps = self.ep_steps - 1
                         self.first_action_taken = False
                         # init pos
+                        (x_set_init, y_set_init) = getPosition(odomMsg)
                         if RANDOM_INIT_POS:
                             print('set random pos')
                             ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
                         else:
                             print('set pos')
-                            ( x_init , y_init , theta_init ) = robotSetPos(self.setPosPub, X_INIT, Y_INIT, THETA_INIT)
+                            ( x_init , y_init , theta_init ) = robotSetPos(self.setPosPub, x_set_init, y_set_init, THETA_INIT)
 
                         _, odomMsg = self.wait_for_message('/odom', Odometry)
                         ( x , y ) = getPosition(odomMsg)
-                        print(x, y)
+                        # print(x, y)
                         theta = degrees(getRotation(odomMsg))
                         # check init pos
                         self.is_set_pos = True
@@ -401,9 +419,15 @@ class LearningNode(Node):
                     
                         # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
                         # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time):
-                        ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash, (current_x, current_y), (GOAL_X, GOAL_Y), MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time , self.get_clock().now().nanoseconds, GOAL_RADIUS)
+                        ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash,
+                                                                   (current_x, current_y), self.prev_position, (GOAL_X, GOAL_Y), 
+                                                                    MAX_RADIUS, RADIUS_REDUCE_RATE, ep_time ,
+                                                                    self.get_clock().now().nanoseconds, 
+                                                                    GOAL_RADIUS)
+                        self.prev_position = (current_x, current_y)
                         self.CUMULATIVE_REWARD += reward
                         print('CUMULATIVE_REWARD: ', self.CUMULATIVE_REWARD)
+                        # print("time: ", self.get_clock().now().nanoseconds)
                         ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
 
                         if EXPLORATION_FUNCTION == 1:
