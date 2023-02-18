@@ -109,7 +109,7 @@ parser.add_argument('--GOAL_RADIUS', default=GOAL_RADIUS, type=float)
 args = parser.parse_args()
 
 (GOAL_X, GOAL_Y, GOAL_THETA) = tuple(args.GOAL_POSITION)
-
+WIN_COUNT = 0.0
 
 class LearningNode(Node):
     def __init__(self):
@@ -161,12 +161,12 @@ class LearningNode(Node):
         self.ep_reward = 0
         self.episode = 1
         self.crash = 0
-        self.reward_max_per_episode = np.array([0])
-        self.reward_min_per_episode = np.array([0])
-        self.reward_avg_per_episode = np.array([0])
-        self.ep_reward_arr = np.array([0])
-        self.steps_per_episode = np.array([0])
-        self.reward_per_episode = np.array([0])
+        self.reward_max_per_episode = np.array([])
+        self.reward_min_per_episode = np.array([])
+        self.reward_avg_per_episode = np.array([])
+        self.ep_reward_arr = np.array([])
+        self.steps_per_episode = np.array([])
+        self.reward_per_episode = np.array([])
         # initial position
         self.robot_in_pos = False
         self.first_action_taken = False
@@ -182,11 +182,12 @@ class LearningNode(Node):
         self.t_sim_start = self.t_start
         self.t_step = self.t_start
 
-        self.T_per_episode = np.array([0])
-        self.EPSILON_per_episode = np.array([0])
-        self.t_per_episode = np.array([0])
+        self.T_per_episode = np.array([])
+        self.EPSILON_per_episode = np.array([])
+        self.t_per_episode = np.array([])
 
         self.CUMULATIVE_REWARD = CUMULATIVE_REWARD
+        self.WIN_COUNT = WIN_COUNT
         self.terminal_state = False
         self.is_set_pos = False
     
@@ -277,7 +278,7 @@ class LearningNode(Node):
         return (False, None)
     
     def save_info_csv(self):
-        print('writing to csv...')
+        print(f'\n writing to csv...')
         saveQTable(args.log_file_dir+'/Qtable.csv', self.Q_table)
         np.savetxt(args.log_file_dir+'/StateSpace.csv', self.state_space, '%d')
         np.savetxt(args.log_file_dir+'/steps_per_episode.csv', self.steps_per_episode, delimiter = ' , ')
@@ -302,6 +303,8 @@ class LearningNode(Node):
                 text = '\r\nTOO BIG STEP TIME: %.2f s' % step_time
                 print(text)
                 self.log_sim_info.write(text+'\r\n')
+                # Log data to file
+                self.save_info_csv()
                 raise SystemExit
             
             # End of Learning
@@ -309,7 +312,7 @@ class LearningNode(Node):
                 # simulation time
                 self.is_set_pos = False
                 self.MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])
-                print(self.episode)
+                # print(self.episode)
                 sim_time = (self.get_clock().now() - self.t_sim_start).nanoseconds / 1e9
                 sim_time_h = sim_time // 3600
                 sim_time_m = ( sim_time - sim_time_h * 3600 ) // 60
@@ -342,12 +345,13 @@ class LearningNode(Node):
             else:
                 ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
                 # End of en Episode
-                print(f'episode {self.episode} of {args.max_episodes}')
+                print(f'\n episode {self.episode} of {args.max_episodes}')
                 
                 if self.CUMULATIVE_REWARD < args.reward_threshold or self.terminal_state:
                     robotStop(self.velPub)
-                    print("End of episode. step: ", self.ep_steps)
-                    print('Cumulative result: ', self.CUMULATIVE_REWARD)
+                    print(f"\n End of episode. step: {self.ep_steps}")
+                    print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
+                    print(f' WIN_COUNT: {self.WIN_COUNT}')
                     # if self.crash:
                     #     # get crash position
                     #     _, odomMsg = self.wait_for_message('/odom', Odometry)
@@ -387,7 +391,7 @@ class LearningNode(Node):
                     self.reward_min_per_episode = np.append(self.reward_min_per_episode, self.reward_min)
                     self.reward_max_per_episode = np.append(self.reward_max_per_episode, self.reward_max)
                     self.reward_avg_per_episode = np.append(self.reward_avg_per_episode, self.reward_avg)
-                    self.ep_reward_arr = np.array([0])
+                    self.ep_reward_arr = np.array([])
                     self.ep_steps = 0
                     self.ep_reward = 0
                     # cum reward reset
@@ -405,10 +409,6 @@ class LearningNode(Node):
                     if self.episode % args.max_episodes_before_save == 0:
                         print(f"saving data to csv every {args.max_episodes_before_save} episodes")
                         self.save_info_csv()
-                    
-                    # if (args.get_best) and ():
-                    #      saveQTable(args.Q_best_source_dir, self.Q_table)
-
 
                     self.episode = self.episode + 1
                 else:
@@ -487,16 +487,18 @@ class LearningNode(Node):
                     
                         # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
                         # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, args.radiaus_reduce_rate, nano_start_time, nano_current_time):
-                        ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash,
+                        ( reward, self.terminal_state, win_count) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash,
                                                                    (current_x, current_y),
                                                                     # self.prev_position,
                                                                      (GOAL_X, GOAL_Y), 
                                                                     self.MAX_RADIUS, args.radiaus_reduce_rate, ep_time ,
                                                                     self.get_clock().now().nanoseconds, 
-                                                                    args.GOAL_RADIUS, x10)
+                                                                    args.GOAL_RADIUS, x10, self.WIN_COUNT)
                         self.prev_position = (current_x, current_y)
                         self.CUMULATIVE_REWARD += reward
-                        print('CUMULATIVE_REWARD: ', self.CUMULATIVE_REWARD)
+                        self.WIN_COUNT = win_count
+                        print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
+                        print(f' WIN_COUNT: {self.WIN_COUNT}')
                         # print("time: ", self.get_clock().now().nanoseconds)
                         ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
 

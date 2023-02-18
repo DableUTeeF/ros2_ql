@@ -121,7 +121,20 @@ def softMaxSelection(Q_table, state_ind, actions, T):
     return ( a, status )
 
 # Reward function for Q-learning - table
-def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, radius_reduce_rate, nano_start_time, nano_current_time, goal_radius, angle_state):
+def getReward(  action, 
+                prev_action,
+                lidar, 
+                prev_lidar, 
+                crash, 
+                current_position, 
+                goal_position, 
+                max_radius, 
+                radius_reduce_rate, 
+                nano_start_time, 
+                nano_current_time, 
+                goal_radius, 
+                angle_state,
+                win_count):
 
     terminal_state = False
     # init reward
@@ -173,6 +186,7 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
     if dist<goal_radius:
         reward += 100
         terminal_state = True
+        win_count += 1
     
     #away from goal panelty
     if angle_state == 0:
@@ -185,7 +199,7 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
     # calculate distance reward
     reward +=  3* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
 
-    return (reward, terminal_state)
+    return (reward, terminal_state, win_count)
     
     # if crash:
     #     terminal_state = True
