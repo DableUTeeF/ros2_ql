@@ -7,14 +7,15 @@ from itertools import product
 from sensor_msgs.msg import LaserScan
 import time
 
-STATE_SPACE_IND_MAX = 12288 - 1
+STATE_SPACE_IND_MAX = 27648 - 1
 STATE_SPACE_IND_MIN = 1 - 1
 ACTIONS_IND_MAX = 7
 ACTIONS_IND_MIN = 0
 
 ANGLE_MAX = 360 - 1
 ANGLE_MIN = 1 - 1
-HORIZON_WIDTH = 75
+# HORIZON_WIDTH = 75 original
+HORIZON_WIDTH = [9, 16, 56, 9]
 
 T_MIN = 0.001
 
@@ -27,19 +28,22 @@ def createActions(n_actions_enable):
 
 # Create state space for Q table
 def createStateSpace():
-    x1 = set((0,1,2,3))
-    x2 = set((0,1,2,3))
-    x3 = set((0,1,2,3))
+    x1 = set((0,1))
+    x2 = set((0,1))
+    x3 = set((0,1,2))
     x4 = set((0,1,2,3))
     x5 = set((0,1,2,3))
-    x6 = set((0,1,2,3))
-    x7 = set((0,1,2))
-    state_space = set(product(x1,x2,x3,x4,x5,x6,x7))
+    x6 = set((0,1,2))
+    x7 = set((0,1))
+    x8 = set((0,1))
+    x9 = set((0,1,2))
+    x10 = set((0,1,2,3))
+    state_space = set(product(x1,x2,x3,x4,x5,x6,x7,x8,x9,x10))
     return np.array(list(state_space))
 
 # Create Q table, dim: n_states x n_actions
 def createQTable(n_states, n_actions):
-    #Q_table = np.random.uniform(low = -0.05, high = 0, size = (n_states,n_actions) )
+    # Q_table = np.random.uniform(low = -1, high = 1, size = (n_states,n_actions) )
     Q_table = np.zeros((n_states, n_actions))
     return Q_table
 
@@ -133,10 +137,8 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
     
     # time penalty 
     dist = np.linalg.norm(np.array(current_position) - np.array(goal_position))
-    
     #  nano time diff
     time_diff = (nano_current_time - nano_start_time)
-
     radius = max_radius - radius_reduce_rate * (time_diff)
     if radius/max_radius < 0.1:
         radius = max_radius * 0.1
@@ -145,32 +147,44 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
     else:
         reward += - .69
 
+    # Crash panelty
     if crash:
-        reward += -100
-    lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + HORIZON_WIDTH):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - HORIZON_WIDTH):-1]))
-    prev_lidar_horizon = np.concatenate((prev_lidar[(ANGLE_MIN + HORIZON_WIDTH):(ANGLE_MIN):-1],prev_lidar[(ANGLE_MAX):(ANGLE_MAX - HORIZON_WIDTH):-1]))
-    W = np.linspace(0.9, 1.1, len(lidar_horizon) // 2)
-    W = np.append(W, np.linspace(1.1, 0.9, len(lidar_horizon) // 2))
+        reward += -200
+
+    # facing wall
+    lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
+    prev_lidar_horizon = np.concatenate((prev_lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],prev_lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
+    W = np.linspace(1, 1.1, len(lidar_horizon) // 2)
+    W = np.append(W, np.linspace(1.1, 1, len(lidar_horizon) // 2))
     if np.sum( W * ( lidar_horizon - prev_lidar_horizon) ) >= 0:
         reward += +0.2
     else:
         reward += -0.2
         
     # action and prev_action is same and action is left or right
-    if action == prev_action and action in (1, 2):
-        reward += -0.1
+    if (prev_action == 3 and action == 4) or (prev_action == 4 and action == 3):
+            reward += -5
+
+    #repeat stop penelty
+    if prev_action == 2 and action == 2:
+            reward += -5
+
+    #reach goal
     if dist<goal_radius:
-        terminal_state = True
         reward += 100
+        terminal_state = True
+    
+    #away from goal panelty
     if angle_state == 0:
-        reward += -0.1
+        reward += -1
+
+    #facing goal reward
     elif angle_state == 1:
         reward += 1
 
     # calculate distance reward
-    reward +=  5 * (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
+    reward +=  3* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
 
-    
     return (reward, terminal_state)
     
     # if crash:

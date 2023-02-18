@@ -91,12 +91,12 @@ def robotStop(velPub):
     velPub.publish(velMsg)
 # CW command
 def robotCW(velPub):
-    velMsg = createVelMsg(0.0, -CONST_ANGULAR_SPEED_CW)
+    velMsg = createVelMsg(0.0, -CONST_ANGULAR_SPEED_TURN)
     velPub.publish(velMsg)
 
 # CCW command
 def robotCCW(velPub):
-    velMsg = createVelMsg(0.0, +CONST_ANGULAR_SPEED_CW)
+    velMsg = createVelMsg(0.0, CONST_ANGULAR_SPEED_TURN)
     velPub.publish(velMsg)    
 # Set robot position and orientation
 def robotSetPos(setPosPub, x, y, theta):

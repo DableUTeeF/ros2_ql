@@ -10,8 +10,8 @@ from std_srvs.srv import Empty
 import pandas as pd
 from std_srvs.srv._empty import Empty_Request
 import sys
-DATA_PATH = 'ros2/ros2_ql/Qtable/QtableV1/Data'
-MODULES_PATH = 'ros2/ros2_ql/Qtable/QtableV1/scrpits'
+DATA_PATH = '/mnt/d/SuperAI ss3/QtableV1/Data'
+MODULES_PATH = '/mnt/d/SuperAI ss3/QtableV1/scrpits'
 
 sys.path.insert(0, MODULES_PATH)
 from gazebo_msgs.msg._model_state import ModelState
@@ -58,7 +58,7 @@ THETA_INIT = 0.0
 RANDOM_INIT_POS = False
 
 # Log file directory
-LOG_FILE_DIR = DATA_PATH + '/Log_learning_CUSTOM'
+LOG_FILE_DIR = DATA_PATH + '/Log_learning'
 
 # Q table source file
 Q_SOURCE_DIR = LOG_FILE_DIR + '/Qtable.csv'
@@ -67,14 +67,14 @@ RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200
 CUMULATIVE_REWARD = 0.0
 
-GOAL_POSITION = (.03, 1.9777, .0)
-GOAL_RADIUS = .06
+GOAL_POSITION = (0., 2., .0)
+GOAL_RADIUS = .1
 
 parser = argparse.ArgumentParser(description='Qtable V1')
 # Log file directory
-parser.add_argument('--log_file_dir', default = LOG_FILE_DIR, type=str, help='/Data/Log_learning_CUSTOM')
+parser.add_argument('--log_file_dir', default = LOG_FILE_DIR, type=str, help='/Data/Log_learning')
 # Q table source file
-parser.add_argument('--Q_source_dir', default = Q_SOURCE_DIR, type=str, help='/Data/Log_learning_CUSTOM/Qtable.csv')
+parser.add_argument('--Q_source_dir', default = Q_SOURCE_DIR, type=str, help='/Data/Log_learning/Qtable.csv')
 
 # Episode parameters
 parser.add_argument('--max_episodes', default=MAX_EPISODES, type=int, help="MAX_EPISODES = 10 (default)")
@@ -83,7 +83,10 @@ parser.add_argument('--max_episodes_before_save', default=MAX_EPISODES_BEFORE_SA
 
 # Learning parameters
 parser.add_argument('--exploration_func', default=1, type=int, choices=[1, 2], help="# 1 - Softmax(default) , 2 - Epsilon greedy")
-parser.add_argument('--resume', default=True, type=str2bool, help ="continue learning with same Qtable--> True | False")
+
+# need to use action='store true' to store boolean. True when type --resume. False otherwise
+# parser.add_argument('--resume', default=True, type=str2bool, help ="continue learning with same Qtable--> True | False")
+parser.add_argument('--resume', action='store_true', help ="continue learning with same Qtable--> True | False")
 parser.add_argument('--n_actions_enable', default=3, type=int, help='default--> 0:forward, 1:left, 2:right,    add-on-->3:superForward, 4:backward, 5:stop, 6:CW, 7:CCW')
 
 parser.add_argument('--radiaus_reduce_rate', default=RADIUS_REDUCE_RATE, type=float)
@@ -111,12 +114,13 @@ class LearningNode(Node):
         self.state_space = createStateSpace()
         print('state_space shape')
         print(self.state_space.shape)
-        self.Q_table = createQTable(len(self.state_space), len(self.actions))
+        # self.Q_table = createQTable(len(self.state_space), len(self.actions))
 
-        if args.resume: 
+        if args.resume:
             self.Q_table = pd.read_csv(args.Q_source_dir, header=None)
             self.Q_table = self.Q_table.to_numpy()
         else:
+            print('not resume')
             self.Q_table = createQTable(len(self.state_space), len(self.actions))
         
         print('Initial Q-table:')
@@ -288,18 +292,18 @@ class LearningNode(Node):
                 sim_time_s = sim_time - sim_time_h * 3600 - sim_time_m * 60
 
                 # real time
-                now_stop = datetime.now()
-                # dt_string_stop = now_stop.strftime("%d/%m/%Y %H:%M:%S")
-                real_time_delta = (now_stop - self.now_start).total_seconds()
-                real_time_h = real_time_delta // 3600
-                real_time_m = ( real_time_delta - real_time_h * 3600 ) // 60
-                real_time_s = real_time_delta - real_time_h * 3600 - real_time_m * 60
+                # now_stop = datetime.now()
+                # # dt_string_stop = now_stop.strftime("%d/%m/%Y %H:%M:%S")
+                # real_time_delta = (now_stop - self.now_start).total_seconds()
+                # real_time_h = real_time_delta // 3600
+                # real_time_m = ( real_time_delta - real_time_h * 3600 ) // 60
+                # real_time_s = real_time_delta - real_time_h * 3600 - real_time_m * 60
 
                 # Log learning session info to file
                 text = '--------------------------------------- \r\n\r\n'
                 text = text + 'MAX EPISODES REACHED(%d), LEARNING FINISHED' % args.max_episodes + '\r\n'
                 text = text + 'Simulation time: %d:%d:%d  h/m/s \r\n' % (sim_time_h, sim_time_m, sim_time_s)
-                text = text + 'Real time: %d:%d:%d  h/m/s \r\n' % (real_time_h, real_time_m, real_time_s)
+                # text = text + 'Real time: %d:%d:%d  h/m/s \r\n' % (real_time_h, real_time_m, real_time_s)
                 print(text)
                 self.log_sim_info.write('\r\n'+text+'\r\n')
                 self.log_sim_params.write(text+'\r\n')
@@ -410,14 +414,19 @@ class LearningNode(Node):
                         #     self.robot_in_pos = False
                     # First acion
                     elif not self.first_action_taken:
-                        ( lidar, angles ) = lidarScan(msgScan)
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (x_init, y_init), (GOAL_X, GOAL_Y),self.prev_position, self.MAX_RADIUS)
+                        self.MAX_RADIUS = np.linalg.norm([X_INIT - GOAL_X, Y_INIT - GOAL_Y])#just added
+                        _, odomMsg = self.wait_for_message('/odom', Odometry)               #just added
+                        ( current_x , current_y ) = getPosition(odomMsg)                    #just added
+                        ( lidar, angles ) = lidarScan(msgScan)                              #just added
+                        
+
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (GOAL_X, GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
                         self.crash = checkCrash(lidar)
 
                         if args.exploration_func == 1 :
                             ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
                         else:
-                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.T)
+                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON)
 
                         status_rda = robotDoAction(self.velPub, self.action)
 
@@ -438,20 +447,23 @@ class LearningNode(Node):
                     # Rest of the algorithm
                     else:
                         ( lidar, angles ) = lidarScan(msgScan)
-                        yaw = getRotation(odomMsg)
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (x_init, y_init), (GOAL_X, GOAL_Y),self.prev_position, self.MAX_RADIUS)
-                        self.crash = checkCrash(lidar)
-
+                        
                         # get position
                         _, odomMsg = self.wait_for_message('/odom', Odometry)
+                        yaw = getRotation(odomMsg)
+
                         ( current_x , current_y ) = getPosition(odomMsg)
-                        # radius caculated by norm of  and goal position
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (GOAL_X, GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                        self.crash = checkCrash(lidar)
                         
+                        # radius caculated by norm of  and goal position
                     
                         # ( reward, terminal_state ) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash)
                         # getReward(action, prev_action,lidar, prev_lidar, crash, current_position, goal_position, max_radius, args.radiaus_reduce_rate, nano_start_time, nano_current_time):
                         ( reward, self.terminal_state) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash,
-                                                                   (current_x, current_y), self.prev_position, (GOAL_X, GOAL_Y), 
+                                                                   (current_x, current_y),
+                                                                    # self.prev_position,
+                                                                     (GOAL_X, GOAL_Y), 
                                                                     self.MAX_RADIUS, args.radiaus_reduce_rate, ep_time ,
                                                                     self.get_clock().now().nanoseconds, 
                                                                     args.GOAL_RADIUS, x10)
@@ -464,7 +476,7 @@ class LearningNode(Node):
                         if args.exploration_func == 1:
                             ( self.action, status_strat ) = softMaxSelection(self.Q_table, state_ind, self.actions, self.T)
                         else:
-                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.T)
+                            ( self.action, status_strat ) = epsiloGreedyExploration(self.Q_table, state_ind, self.actions, self.EPSILON)
 
                         status_rda = robotDoAction(self.velPub, self.action)
 

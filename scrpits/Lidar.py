@@ -6,7 +6,7 @@ from std_msgs.msg import String
 from sensor_msgs.msg import LaserScan
 
 MAX_LIDAR_DISTANCE = .8
-COLLISION_DISTANCE = 0.14 # LaserScan.range_min = 0.1199999
+COLLISION_DISTANCE = 0.125 # LaserScan.range_min = 0.1199999
 NEARBY_DISTANCE = 0.45
 
 ZONE_0_LENGTH = .25
@@ -42,7 +42,7 @@ def lidarScan(msgScan):
     return ( distances, angles )
 
 # Discretization of lidar scan
-def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_direction, robot_prev_pose, max_dist):
+def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_pose, max_dist, goal_radius):
     x1 = 1  # no obstacle
     x2 = 1
     x3 = 2
@@ -51,6 +51,8 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_directi
     x6 = 2 
     x7 = 1
     x8 = 1
+    x9 = 2
+    x10 = 2
     
     lidar_x1 = min(lidar[81: 91])
     if ZONE_0_LENGTH < lidar_x1 < ZONE_1_LENGTH:
@@ -106,7 +108,9 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_directi
         x8 = 0
 
     # distance
-    
+    target_pos = np.array(target_pos)
+    robot_pose = np.array(robot_pose)
+
     dist = np.linalg.norm(target_pos - robot_pose)
 
     if dist > .5 * max_dist:
@@ -131,7 +135,7 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_directi
     if np.dot(d_vec, v_vec) < 0:
         x10 = 0 # going back
     else:
-        if np.arcos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec))) < np.arcsin(0.1)/dist:
+        if np.arccos(np.dot(d_vec, v_vec) / (np.linalg.norm(d_vec) * np.linalg.norm(v_vec))) < np.arcsin(goal_radius)/dist:
             x10 = 1 # going to target
         elif np.cross(d_vec3d, v_vec3d)[2] < 0:
             x10 = 2  # too much right
@@ -147,28 +151,30 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_directi
 
 # Check - crash
 def checkCrash(lidar):
-    lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH)):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH)):-1]))
-    W = np.linspace(1.56, 1, len(lidar_horizon) // 2)
-    W = np.append(W, np.linspace(1, 1.56, len(lidar_horizon) // 2))
-    if np.min( W * lidar_horizon ) < COLLISION_DISTANCE:
+    # lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH)):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH)):-1]))
+    # W = np.linspace(1.56, 1, len(lidar_horizon) // 2)
+    # W = np.append(W, np.linspace(1, 1.56, len(lidar_horizon) // 2))
+    # if np.min( W * lidar_horizon ) < COLLISION_DISTANCE:
+    if np.min(lidar) < COLLISION_DISTANCE:
         return True
     else:
         return False
 
 # Check - object nearby
-def checkObjectNearby(lidar):
-    lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH)):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH)):-1]))
-    W = np.linspace(1.56, 1, len(lidar_horizon) // 2)
-    W = np.append(W, np.linspace(1, 1.56, len(lidar_horizon) // 2))
-    if np.min( W * lidar_horizon ) < NEARBY_DISTANCE:
-        return True
-    else:
-        return False
+# def checkObjectNearby(lidar):
+#     # lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH)):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH)):-1]))
+#     # W = np.linspace(1.56, 1, len(lidar_horizon) // 2)
+#     # W = np.append(W, np.linspace(1, 1.56, len(lidar_horizon) // 2))
+#     # if np.min( W * lidar_horizon ) < NEARBY_DISTANCE:
+#     if np.min(lidar) < NEARBY_DISTANCE:
+#         return True
+#     else:
+#         return False
 
 # Check - goal near
-def checkGoalNear(x, y, x_goal, y_goal):
-    ro = sqrt( pow( ( x_goal - x ) , 2 ) + pow( ( y_goal - y ) , 2) )
-    if ro < 0.3:
-        return True
-    else:
-        return False
+# def checkGoalNear(x, y, x_goal, y_goal):
+#     ro = sqrt( pow( ( x_goal - x ) , 2 ) + pow( ( y_goal - y ) , 2) )
+#     if ro < 0.3:
+#         return True
+#     else:
+#         return False

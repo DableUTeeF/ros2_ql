@@ -1,38 +1,122 @@
 
-TOO BIG STEP TIME: 10.15 s
+---------------------------------------
+
+episode time: 28.00 s (avg step: 0.52 s) 
+episode steps: 54 
+episode reward: -335.84 
+episode max | avg | min reward: 0.00 | -6.22 | -201.47 
+EPSILON = 0.900000 
 
 ---------------------------------------
 
-Episode 1 ==> CRASH {0.95,0.93,91.10}    23/01/2023 05:12:42
-episode time: 73.55 s (avg step: 0.59 s) 
-episode steps: 124 
-episode reward: -111.00 
-episode max | avg | min reward: 0.40 | -0.90 | -100.00 
-T = 25.000000 
+episode time: 13.49 s (avg step: 0.52 s) 
+episode steps: 26 
+episode reward: -267.38 
+episode max | avg | min reward: 0.00 | -10.28 | -201.76 
+EPSILON = 0.864000 
 
 ---------------------------------------
 
-Episode 2 ==> CRASH {-1.27,-0.12,61.79}    23/01/2023 05:12:57
-episode time: 14.54 s (avg step: 0.54 s) 
-episode steps: 27 
-episode reward: -104.30 
-episode max | avg | min reward: 0.10 | -4.01 | -100.00 
-T = 23.750000 
+episode time: 29.36 s (avg step: 0.51 s) 
+episode steps: 58 
+episode reward: -363.16 
+episode max | avg | min reward: 0.00 | -6.26 | -201.48 
+EPSILON = 0.829440 
 
 ---------------------------------------
 
-Episode 3 ==> CRASH {0.22,-2.45,-119.53}    23/01/2023 05:14:04
-episode time: 66.99 s (avg step: 0.51 s) 
-episode steps: 132 
-episode reward: -108.90 
-episode max | avg | min reward: 0.40 | -0.83 | -100.00 
-T = 22.562500 
+episode time: 45.55 s (avg step: 0.51 s) 
+episode steps: 90 
+episode reward: -201.87 
+episode max | avg | min reward: 0.00 | -2.24 | -6.86 
+EPSILON = 0.796262 
 
 ---------------------------------------
 
-Episode 4 ==> CRASH {-1.86,-1.65,-114.89}    23/01/2023 05:14:30
-episode time: 25.53 s (avg step: 0.52 s) 
+episode time: 21.65 s (avg step: 0.52 s) 
+episode steps: 42 
+episode reward: -312.21 
+episode max | avg | min reward: 0.00 | -7.43 | -201.34 
+EPSILON = 0.764412 
+
+---------------------------------------
+
+episode time: 18.95 s (avg step: 0.53 s) 
+episode steps: 36 
+episode reward: -288.40 
+episode max | avg | min reward: 0.00 | -8.01 | -201.50 
+EPSILON = 0.733835 
+
+---------------------------------------
+
+episode time: 19.37 s (avg step: 0.51 s) 
+episode steps: 38 
+episode reward: -301.46 
+episode max | avg | min reward: 0.00 | -7.93 | -201.77 
+EPSILON = 0.704482 
+
+---------------------------------------
+
+episode time: 16.69 s (avg step: 0.52 s) 
+episode steps: 32 
+episode reward: -272.36 
+episode max | avg | min reward: 0.00 | -8.51 | -206.87 
+EPSILON = 0.676303 
+
+---------------------------------------
+
+episode time: 27.59 s (avg step: 0.51 s) 
+episode steps: 54 
+episode reward: -348.98 
+episode max | avg | min reward: 0.00 | -6.46 | -201.96 
+EPSILON = 0.649251 
+
+---------------------------------------
+
+episode time: 19.48 s (avg step: 0.54 s) 
+episode steps: 36 
+episode reward: -274.06 
+episode max | avg | min reward: 0.00 | -7.61 | -201.46 
+EPSILON = 0.623281 
+
+---------------------------------------
+
+episode time: 15.20 s (avg step: 0.58 s) 
+episode steps: 26 
+episode reward: -253.34 
+episode max | avg | min reward: 0.00 | -9.74 | -201.77 
+EPSILON = 0.598349 
+
+---------------------------------------
+
+episode time: 27.85 s (avg step: 0.55 s) 
+episode steps: 51 
+episode reward: -305.57 
+episode max | avg | min reward: 0.00 | -5.99 | -201.46 
+EPSILON = 0.574415 
+
+---------------------------------------
+
+episode time: 1.73 s (avg step: 0.87 s) 
+episode steps: 2 
+episode reward: -201.87 
+episode max | avg | min reward: 0.00 | -100.93 | -201.87 
+EPSILON = 0.551439 
+
+---------------------------------------
+
+episode time: 1.80 s (avg step: 0.90 s) 
+episode steps: 2 
+episode reward: -201.87 
+episode max | avg | min reward: 0.00 | -100.93 | -201.87 
+EPSILON = 0.529381 
+
+---------------------------------------
+
+episode time: 31.85 s (avg step: 0.65 s) 
 episode steps: 49 
-episode reward: -105.30 
-episode max | avg | min reward: 0.40 | -2.19 | -100.00 
-T = 21.434375 
+episode reward: -293.11 
+episode max | avg | min reward: 0.00 | -5.98 | -201.48 
+EPSILON = 0.508206 
+
+TOO BIG STEP TIME: 2.24 s
