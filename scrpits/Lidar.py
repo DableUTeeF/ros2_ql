@@ -115,7 +115,7 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
 
     if dist > .5 * max_dist:
         x9 = 2
-    elif dist > .1:
+    elif dist > 2*goal_radius:
         x9 = 1
     else:
         x9 = 0

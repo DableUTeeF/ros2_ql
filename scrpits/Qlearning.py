@@ -151,7 +151,7 @@ def getReward(action, prev_action,lidar, prev_lidar, crash, current_position, go
     if crash:
         reward += -200
 
-    # facing wall
+    # facing wall panelty/rewards
     lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
     prev_lidar_horizon = np.concatenate((prev_lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:2])):(ANGLE_MIN):-1],prev_lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:2])):-1]))
     W = np.linspace(1, 1.1, len(lidar_horizon) // 2)
