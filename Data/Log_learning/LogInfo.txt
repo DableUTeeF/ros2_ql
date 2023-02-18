@@ -1,122 +1,42 @@
 
 ---------------------------------------
 
-episode time: 28.00 s (avg step: 0.52 s) 
-episode steps: 54 
-episode reward: -335.84 
-episode max | avg | min reward: 0.00 | -6.22 | -201.47 
-EPSILON = 0.900000 
+episode time: 32.00 s (avg step: 0.52 s) 
+episode steps: 62 
+episode reward: -351.75 
+episode max | avg | min reward: 0.00 | -5.67 | -201.49 
+T = 25.000000 
 
 ---------------------------------------
 
-episode time: 13.49 s (avg step: 0.52 s) 
-episode steps: 26 
-episode reward: -267.38 
-episode max | avg | min reward: 0.00 | -10.28 | -201.76 
-EPSILON = 0.864000 
+episode time: 45.85 s (avg step: 0.53 s) 
+episode steps: 87 
+episode reward: -200.66 
+episode max | avg | min reward: 0.00 | -2.31 | -6.88 
+T = 23.750000 
 
 ---------------------------------------
 
-episode time: 29.36 s (avg step: 0.51 s) 
-episode steps: 58 
-episode reward: -363.16 
-episode max | avg | min reward: 0.00 | -6.26 | -201.48 
-EPSILON = 0.829440 
+episode time: 48.16 s (avg step: 0.59 s) 
+episode steps: 81 
+episode reward: -371.43 
+episode max | avg | min reward: 0.00 | -4.59 | -201.48 
+T = 22.562500 
 
 ---------------------------------------
 
-episode time: 45.55 s (avg step: 0.51 s) 
-episode steps: 90 
-episode reward: -201.87 
-episode max | avg | min reward: 0.00 | -2.24 | -6.86 
-EPSILON = 0.796262 
+episode time: 29.89 s (avg step: 0.51 s) 
+episode steps: 59 
+episode reward: -367.53 
+episode max | avg | min reward: 0.00 | -6.23 | -201.77 
+T = 21.434375 
 
 ---------------------------------------
 
-episode time: 21.65 s (avg step: 0.52 s) 
-episode steps: 42 
-episode reward: -312.21 
-episode max | avg | min reward: 0.00 | -7.43 | -201.34 
-EPSILON = 0.764412 
+episode time: 27.10 s (avg step: 0.54 s) 
+episode steps: 50 
+episode reward: -318.08 
+episode max | avg | min reward: 0.00 | -6.36 | -201.53 
+T = 20.362656 
 
----------------------------------------
-
-episode time: 18.95 s (avg step: 0.53 s) 
-episode steps: 36 
-episode reward: -288.40 
-episode max | avg | min reward: 0.00 | -8.01 | -201.50 
-EPSILON = 0.733835 
-
----------------------------------------
-
-episode time: 19.37 s (avg step: 0.51 s) 
-episode steps: 38 
-episode reward: -301.46 
-episode max | avg | min reward: 0.00 | -7.93 | -201.77 
-EPSILON = 0.704482 
-
----------------------------------------
-
-episode time: 16.69 s (avg step: 0.52 s) 
-episode steps: 32 
-episode reward: -272.36 
-episode max | avg | min reward: 0.00 | -8.51 | -206.87 
-EPSILON = 0.676303 
-
----------------------------------------
-
-episode time: 27.59 s (avg step: 0.51 s) 
-episode steps: 54 
-episode reward: -348.98 
-episode max | avg | min reward: 0.00 | -6.46 | -201.96 
-EPSILON = 0.649251 
-
----------------------------------------
-
-episode time: 19.48 s (avg step: 0.54 s) 
-episode steps: 36 
-episode reward: -274.06 
-episode max | avg | min reward: 0.00 | -7.61 | -201.46 
-EPSILON = 0.623281 
-
----------------------------------------
-
-episode time: 15.20 s (avg step: 0.58 s) 
-episode steps: 26 
-episode reward: -253.34 
-episode max | avg | min reward: 0.00 | -9.74 | -201.77 
-EPSILON = 0.598349 
-
----------------------------------------
-
-episode time: 27.85 s (avg step: 0.55 s) 
-episode steps: 51 
-episode reward: -305.57 
-episode max | avg | min reward: 0.00 | -5.99 | -201.46 
-EPSILON = 0.574415 
-
----------------------------------------
-
-episode time: 1.73 s (avg step: 0.87 s) 
-episode steps: 2 
-episode reward: -201.87 
-episode max | avg | min reward: 0.00 | -100.93 | -201.87 
-EPSILON = 0.551439 
-
----------------------------------------
-
-episode time: 1.80 s (avg step: 0.90 s) 
-episode steps: 2 
-episode reward: -201.87 
-episode max | avg | min reward: 0.00 | -100.93 | -201.87 
-EPSILON = 0.529381 
-
----------------------------------------
-
-episode time: 31.85 s (avg step: 0.65 s) 
-episode steps: 49 
-episode reward: -293.11 
-episode max | avg | min reward: 0.00 | -5.98 | -201.48 
-EPSILON = 0.508206 
-
-TOO BIG STEP TIME: 2.24 s
+TOO BIG STEP TIME: 2.80 s

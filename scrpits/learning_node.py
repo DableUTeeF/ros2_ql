@@ -10,8 +10,8 @@ from std_srvs.srv import Empty
 import pandas as pd
 from std_srvs.srv._empty import Empty_Request
 import sys
-DATA_PATH = '/mnt/d/SuperAI ss3/QtableV1/Data'
-MODULES_PATH = '/mnt/d/SuperAI ss3/QtableV1/scrpits'
+DATA_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/Data'
+MODULES_PATH = '/mnt/c/Users/keera/Documents/Github/Basic_robot/QtableV1/scrpits'
 
 sys.path.insert(0, MODULES_PATH)
 from gazebo_msgs.msg._model_state import ModelState
@@ -28,7 +28,7 @@ from rclpy.utilities import timeout_sec_to_nsec
 
 
 import argparse
-
+import os
 # Episode parameters
 MAX_EPISODES = 10
 MAX_STEPS_PER_EPISODE = 500
@@ -62,6 +62,7 @@ LOG_FILE_DIR = DATA_PATH + '/Log_learning'
 
 # Q table source file
 Q_SOURCE_DIR = LOG_FILE_DIR + '/Qtable.csv'
+Q_BEST_SOURCE_DIR = LOG_FILE_DIR + '/Qtable_best_time.csv'
 
 RADIUS_REDUCE_RATE = .5
 REWARD_THRESHOLD =  -200
@@ -70,11 +71,21 @@ CUMULATIVE_REWARD = 0.0
 GOAL_POSITION = (0., 2., .0)
 GOAL_RADIUS = .1
 
-parser = argparse.ArgumentParser(description='Qtable V1')
+# edit when chang order in def roboDoAction in Control.py  *****
+ACTIONS_DESCRIPTION = { 0 : 'Forward',
+                        1 : 'CW',
+                        2 : 'CCW',
+                        3 : 'Stop',
+                        4 : 'SuperForward'}
+MAX_WIDTH = 25
+
+parser = argparse.ArgumentParser(description='Qtable V1 ~~Branch: welcomeToV2')
 # Log file directory
 parser.add_argument('--log_file_dir', default = LOG_FILE_DIR, type=str, help='/Data/Log_learning')
 # Q table source file
 parser.add_argument('--Q_source_dir', default = Q_SOURCE_DIR, type=str, help='/Data/Log_learning/Qtable.csv')
+# Q table best source file
+# parser.add_argument('--Q_best_source_dir', default = Q_BEST_SOURCE_DIR, type=str, help='/Data/Log_learning/Qtable_best_time.csv')
 
 # Episode parameters
 parser.add_argument('--max_episodes', default=MAX_EPISODES, type=int, help="MAX_EPISODES = 10 (default)")
@@ -85,9 +96,9 @@ parser.add_argument('--max_episodes_before_save', default=MAX_EPISODES_BEFORE_SA
 parser.add_argument('--exploration_func', default=1, type=int, choices=[1, 2], help="# 1 - Softmax(default) , 2 - Epsilon greedy")
 
 # need to use action='store true' to store boolean. True when type --resume. False otherwise
-# parser.add_argument('--resume', default=True, type=str2bool, help ="continue learning with same Qtable--> True | False")
+# parser.add_argument('--get_best', action='store_true', help ="save Qtable_best  when minimize rel_time --> True | False")
 parser.add_argument('--resume', action='store_true', help ="continue learning with same Qtable--> True | False")
-parser.add_argument('--n_actions_enable', default=3, type=int, help='default--> 0:forward, 1:left, 2:right,    add-on-->3:superForward, 4:backward, 5:stop, 6:CW, 7:CCW')
+parser.add_argument('--n_actions_enable', default=4, type=int, help='default--> 0:forward, 1:CW, 2:CCW, 3:stop, 4:superForward')
 
 parser.add_argument('--radiaus_reduce_rate', default=RADIUS_REDUCE_RATE, type=float)
 parser.add_argument('--reward_threshold', default=REWARD_THRESHOLD, type=int)
@@ -112,22 +123,30 @@ class LearningNode(Node):
         self.reset.call_async(self.dummy_req)
         self.actions = createActions(args.n_actions_enable)
         self.state_space = createStateSpace()
-        print('state_space shape')
-        print(self.state_space.shape)
-        # self.Q_table = createQTable(len(self.state_space), len(self.actions))
+        print(f'\n {"start learning_node with":^{MAX_WIDTH*4}}')
+        print('-'*100)
+        for arg in vars(args):
+            print(f'{arg:<{MAX_WIDTH}}: {str(getattr(args, arg)):<{MAX_WIDTH}}')
+
+        print('-'*100)
+        print(f'\n state_space shape:  {self.state_space.shape[0]}')
+        print(f'\n n_actions: {args.n_actions_enable} --> {[ACTIONS_DESCRIPTION[i] for i in range(args.n_actions_enable)]}')
+
 
         if args.resume:
             self.Q_table = pd.read_csv(args.Q_source_dir, header=None)
             self.Q_table = self.Q_table.to_numpy()
         else:
-            print('not resume')
+            print(f'\n not resume then create new Q Table')
             self.Q_table = createQTable(len(self.state_space), len(self.actions))
-        
-        print('Initial Q-table:')
-        print(self.Q_table.shape, self.Q_table)
+        print(f' Q-table shape{self.Q_table.shape}')
+        # if not os.path.exists(args.log_file_dir +'/LogInfo.txt'):
+        #     self.log_sim_info = open(args.log_file_dir +'/LogInfo.txt','w')
+        # if not os.path.exists(args.log_file_dir +'/LogInfo.txt'):
+        #     self.log_sim_params = open(args.log_file_dir +'/LogParams.txt','w')
         # Init log files
-        self.log_sim_info = open(args.log_file_dir +'/LogInfo.txt','w+')
-        self.log_sim_params = open(args.log_file_dir +'/LogParams.txt','w+')
+        self.log_sim_info = open(args.log_file_dir +'/LogInfo.txt','w')
+        self.log_sim_params = open(args.log_file_dir +'/LogParams.txt','w')
         # Learning parameters
         self.T = T_INIT
         self.EPSILON = EPSILON_INIT
@@ -279,6 +298,7 @@ class LearningNode(Node):
                 text = '\r\nTOO BIG STEP TIME: %.2f s' % step_time
                 print(text)
                 self.log_sim_info.write(text+'\r\n')
+                raise SystemExit
             
             # End of Learning
             if self.episode > args.max_episodes :#or self.terminal_state:
@@ -318,6 +338,7 @@ class LearningNode(Node):
             else:
                 ep_time = (self.get_clock().now() - self.t_ep).nanoseconds / 1e9
                 # End of en Episode
+                print(f'episode {self.episode} of {args.max_episodes}')
                 
                 if self.CUMULATIVE_REWARD < args.reward_threshold or self.terminal_state:
                     robotStop(self.velPub)
@@ -380,12 +401,14 @@ class LearningNode(Node):
                     if self.episode % args.max_episodes_before_save == 0:
                         print(f"saving data to csv every {args.max_episodes_before_save} episodes")
                         self.save_info_csv()
+                    
+                    # if (args.get_best) and ():
+                    #      saveQTable(args.Q_best_source_dir, self.Q_table)
 
 
                     self.episode = self.episode + 1
                 else:
                     self.ep_steps = self.ep_steps + 1
-                    print(self.ep_steps)
                     # Initial position
                     if not self.is_set_pos:
                         _, odomMsg = self.wait_for_message('/odom', Odometry)

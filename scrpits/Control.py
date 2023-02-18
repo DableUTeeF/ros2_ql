@@ -176,15 +176,15 @@ def robotDoAction(velPub, action):
     # elif action == 2:
     #     robotTurnRight(velPub)
 ########################################
-    elif action == 1:
+    elif action == 4:
         robotGoSuperForward(velPub)
     # elif action == 4:
     #     robotGoBackward(velPub) 
-    elif action == 2:
-        robotStop(velPub)   
     elif action == 3:
+        robotStop(velPub)   
+    elif action == 1:
         robotCW(velPub)
-    elif action == 4:
+    elif action == 2:
         robotCCW(velPub)       
     else:
         status = 'robotDoAction => INVALID ACTION'

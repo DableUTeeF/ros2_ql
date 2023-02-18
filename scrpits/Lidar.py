@@ -43,6 +43,7 @@ def lidarScan(msgScan):
 
 # Discretization of lidar scan
 def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_pose, max_dist, goal_radius):
+    ### now --> 2304*3*4 stage
     x1 = 1  # no obstacle
     x2 = 1
     x3 = 2
@@ -51,6 +52,7 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
     x6 = 2 
     x7 = 1
     x8 = 1
+    
     x9 = 2
     x10 = 2
     
