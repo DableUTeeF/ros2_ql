@@ -145,6 +145,10 @@ class LearningNode(Node):
         # if not os.path.exists(args.log_file_dir +'/LogInfo.txt'):
         #     self.log_sim_params = open(args.log_file_dir +'/LogParams.txt','w')
         # Init log files
+
+        
+        print()
+        input("Press enter to continue")
         self.log_sim_info = open(args.log_file_dir +'/LogInfo.txt','w')
         self.log_sim_params = open(args.log_file_dir +'/LogParams.txt','w')
         # Learning parameters
