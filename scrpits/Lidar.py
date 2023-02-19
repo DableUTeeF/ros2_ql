@@ -12,11 +12,11 @@ NEARBY_DISTANCE = 0.45
 ZONE_0_LENGTH = .25
 ZONE_1_LENGTH = .5
 
-ANGLE_MAX = 360 - 1 #359  degree
+ANGLE_MAX = 360  #360  degree
 ANGLE_MIN = 1 - 1   #0 degree
 ANGLE_BACK = 180  #180 degree
 # HORIZON_WIDTH = 75  #original
-HORIZON_WIDTH = [9, 16, 56, 9] #9:x1, x2, x7   16:x3, x4   25:x5, x6 
+HORIZON_WIDTH = [9, 16, 65, 9] #9:x1, x2, x7   16:x3, x4   25:x5, x6 
 
 # Convert LasecScan msg to array
 def lidarScan(msgScan):
@@ -45,26 +45,57 @@ def lidarScan(msgScan):
 def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_pose, max_dist, goal_radius):
     ### now --> 2304*3*4 stage
     x1 = 1  # no obstacle
-    x2 = 1
+    x2 = 0
     x3 = 2
     x4 = 3
     x5 = 3
     x6 = 2 
-    x7 = 1
+    x7 = 2
     x8 = 1
     
     x9 = 2
-    x10 = 2
-    
-    lidar_x1 = min(lidar[81: 91])
-    if ZONE_0_LENGTH < lidar_x1 < ZONE_1_LENGTH:
-        x1 = 0
-    
-    lidar_x2 = min(lidar[25: 91])
-    if ZONE_0_LENGTH > lidar_x2:
-        x2 = 0
+    x10 = 1
 
-    lidar_x3 = min(lidar[9: 26])
+    length_lidar = len(lidar) 
+    # print(f'length_lidar: {length_lidar}')
+    ratio = length_lidar / 360 
+    
+    ###############################################################################
+    ##HORIZON_WIDTH[0] --> 9 degree :x1, x8
+    # lidar_x1 = min(lidar[81: 90])
+    lidar_x1 = min(lidar[round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2])): round(ratio*(ANGLE_MIN + HORIZON_WIDTH[1] + HORIZON_WIDTH[2] + HORIZON_WIDTH[3])) ])
+    if ZONE_0_LENGTH <= lidar_x1 <= ZONE_1_LENGTH:
+        x1 = 1
+    else: 
+        x1 = 0
+
+    # lidar_x8 = min(lidar[270: 279])
+    lidar_x8 = min(lidar[round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2] - HORIZON_WIDTH[3])):round(ratio*(ANGLE_MAX - HORIZON_WIDTH[1] - HORIZON_WIDTH[2])) ])
+    if ZONE_0_LENGTH <= lidar_x8 <= ZONE_1_LENGTH:
+        x1 = 1
+    else: 
+        x1 = 0
+
+    ###############################################################################
+    ##HORIZON_WIDTH[2] --> 65 degree(25 to 90) :x2, x7
+    # lidar_x2 = min(lidar[25: 90])
+    lidar_x2 = min(lidar[round(ratio*(ANGLE_MIN + HORIZON_WIDTH[0] + HORIZON_WIDTH[1])): round(ratio*(ANGLE_MIN + HORIZON_WIDTH[0] + HORIZON_WIDTH[1] + HORIZON_WIDTH[2] ))])
+    if ZONE_0_LENGTH <= lidar_x2:
+        x2 = 0
+    else:
+        x2 = 1
+
+    # lidar_x7 = min(lidar[270: 335])
+    lidar_x7 = min(lidar[round(ratio*(ANGLE_MAX  - HORIZON_WIDTH[0] - HORIZON_WIDTH[1] - HORIZON_WIDTH[2] )):round(ratio*(ANGLE_MAX - HORIZON_WIDTH[0] - HORIZON_WIDTH[1])) ])
+    if ZONE_0_LENGTH <= lidar_x7:
+        x7 = 0
+    else:
+        x7 = 1
+
+    ###############################################################################
+    ##HORIZON_WIDTH[1] --> 16 degree (9 to 25):x3, x6
+    # lidar_x3 = min(lidar[9: 25])
+    lidar_x3 = min( lidar[round(ratio*(ANGLE_MIN + HORIZON_WIDTH[0])): round(ratio*(ANGLE_MIN + HORIZON_WIDTH[0] + HORIZON_WIDTH[1]))])
     if ZONE_1_LENGTH < lidar_x3:
         x3 = 2
     elif ZONE_0_LENGTH < lidar_x3 < ZONE_1_LENGTH:
@@ -72,7 +103,19 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
     elif lidar_x3 < ZONE_0_LENGTH:
         x3 = 0
 
-    lidar_x4 = min(lidar[0: 10])
+    # lidar_x6 = min(lidar[335: 351])
+    lidar_x6 = min(lidar[round(ratio*(ANGLE_MAX  - HORIZON_WIDTH[0] - HORIZON_WIDTH[1])):round(ratio*(ANGLE_MAX - HORIZON_WIDTH[0]))])
+    if ZONE_1_LENGTH < lidar_x6:
+        x6 = 2
+    elif ZONE_0_LENGTH < lidar_x6 < ZONE_1_LENGTH:
+        x6 = 1
+    elif lidar_x6 < ZONE_0_LENGTH:
+        x6 = 0
+
+    ###############################################################################
+    ##HORIZON_WIDTH[0] --> 9 degree :x4, x5    
+    # lidar_x4 = min(lidar[0: 10])
+    lidar_x4 = min(lidar[ANGLE_MIN: round(ratio*(ANGLE_MIN + HORIZON_WIDTH[0]))])
     if MAX_LIDAR_DISTANCE < lidar_x4:
         x4 = 3
     elif ZONE_1_LENGTH < lidar_x4:
@@ -83,32 +126,19 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
         x4 = 0
 
     # from index 351 to 0
-    lidar_x5 = min(lidar[350: 360] + lidar[0])
+    # lidar_x5 = min(lidar[350: 360] + lidar[0])
+    lidar_x5 = min(lidar[round(ratio*(ANGLE_MAX  - HORIZON_WIDTH[0] )):round(ratio*(ANGLE_MAX))] + lidar[0])
+
     if MAX_LIDAR_DISTANCE < lidar_x5:
         x5 = 3
     elif ZONE_1_LENGTH < lidar_x5:
         x5 = 2
     elif ZONE_0_LENGTH < lidar_x5 < ZONE_1_LENGTH:
         x5 = 1
-    elif lidar_x4 < ZONE_0_LENGTH:
+    elif lidar_x5 < ZONE_0_LENGTH:
         x5 = 0
 
-    lidar_x6 = min(lidar[335: 351])
-    if ZONE_1_LENGTH < lidar_x6:
-        x6 = 2
-    elif ZONE_0_LENGTH < lidar_x6 < ZONE_1_LENGTH:
-        x6 = 1
-    elif lidar_x6 < ZONE_0_LENGTH:
-        x6 = 0
-
-    lidar_x7 = min(lidar[270: 335])
-    if ZONE_0_LENGTH > lidar_x7:
-        x7 = 0
-
-    lidar_x8 = min(lidar[270: 279])
-    if ZONE_0_LENGTH < lidar_x8 < ZONE_1_LENGTH:
-        x8 = 0
-
+    ###############################################################################
     # distance
     target_pos = np.array(target_pos)
     robot_pose = np.array(robot_pose)
@@ -146,7 +176,7 @@ def scanDiscretization(state_space, lidar, target_pos, robot_pose, robot_prev_po
        
 
 
-    ss = np.where(np.all(state_space == np.array([x1,x2,x3,x4, x5, x6, x7, x8, x9, x10]), axis = 1))
+    ss = np.where(np.all(state_space == np.array([x1, x2, x3, x4, x5, x6, x7, x8, x9, x10]), axis = 1))
     state_ind = int(ss[0])
 
     return ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10)

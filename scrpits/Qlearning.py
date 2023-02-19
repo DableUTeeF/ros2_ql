@@ -194,6 +194,12 @@ def getReward(  action,
 
     #facing goal reward
     elif angle_state == 1:
+        reward += 5
+
+    elif angle_state == 2:
+        reward += 1
+
+    elif angle_state == 3:
         reward += 1
 
     # calculate distance reward

@@ -148,7 +148,7 @@ class LearningNode(Node):
 
         
         print()
-        input("Press enter to continue")
+        input("Press enter to continue...")
         self.log_sim_info = open(args.log_file_dir +'/LogInfo.txt','w')
         self.log_sim_params = open(args.log_file_dir +'/LogParams.txt','w')
         # Learning parameters
@@ -261,6 +261,7 @@ class LearningNode(Node):
         wait_set.add_guard_condition(sigint_gc.handle)
 
         timeout_nsec = timeout_sec_to_nsec(time_to_wait)
+        # print(f'time_to_wait: {timeout_nsec}')
         wait_set.wait(timeout_nsec)
 
         subs_ready = wait_set.get_ready_entities('subscription')
