@@ -73,7 +73,7 @@ GOAL_POSITION = (0., 2., .0)
 R = [-2,-1,1,2]
 
 GOAL_X = 0
- = 0
+GOAL_Y = 0
 GOAL_RADIUS = .1
 
 # edit when chang order in def roboDoAction in Control.py  *****
