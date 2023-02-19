@@ -70,6 +70,10 @@ REWARD_THRESHOLD =  -200
 CUMULATIVE_REWARD = 0.0
 
 GOAL_POSITION = (0., 2., .0)
+R = [-2,-1,1,2]
+
+GOAL_X = 0
+GOAL_Y = 0
 GOAL_RADIUS = .1
 
 # edit when chang order in def roboDoAction in Control.py  *****
@@ -105,11 +109,18 @@ parser.add_argument('--radiaus_reduce_rate', default=RADIUS_REDUCE_RATE, type=fl
 parser.add_argument('--reward_threshold', default=REWARD_THRESHOLD, type=int)
 parser.add_argument('--GOAL_POSITION', default=GOAL_POSITION, nargs='+', type=float)
 parser.add_argument('--GOAL_RADIUS', default=GOAL_RADIUS, type=float)
+parser.add_argument('--RANDOM_GOAL', default=0, type=int, dest="RANDOM_GOAL")
 
 
 args_parse = parser.parse_args()
+is_rand = args_parse.RANDOM_GOAL
+if is_rand:
+    (GOAL_X, GOAL_Y) = np.random.choice(R,2)
+    GOAL_THETA = 0
+    print((GOAL_X, GOAL_Y))
+else:
+    (GOAL_X, GOAL_Y, GOAL_THETA) = tuple(args_parse.GOAL_POSITION)
 
-(GOAL_X, GOAL_Y, GOAL_THETA) = tuple(args_parse.GOAL_POSITION)
 WIN_COUNT = 0.0
 
 
@@ -125,6 +136,8 @@ class LearningNode(Node):
         self.reset.call_async(self.dummy_req)
         self.actions = createActions(args_parse.n_actions_enable)
         self.state_space = createStateSpace()
+        self.GOAL_X = GOAL_X
+        self.GOAL_Y = GOAL_Y
         print(f'\n {"start learning_node with":^{MAX_WIDTH*4}}')
         print('-'*100)
         for arg in vars(args_parse):
@@ -414,8 +427,15 @@ class LearningNode(Node):
                     # save to csv every n episodes
                     if self.episode % args_parse.max_episodes_before_save == 0:
                         print(f"saving data to csv every {args_parse.max_episodes_before_save} episodes")
+                        if is_rand:
+                            (self.GOAL_X, self.GOAL_Y) = np.random.choice(R,2)
+                            GOAL_THETA = 0
+                            print(self.GOAL_X, self.GOAL_Y)
+                        else:
+                            (self.GOAL_X, self.GOAL_Y, GOAL_THETA) = tuple(args_parse.GOAL_POSITION)
                         self.save_info_csv()
-
+                        
+                    
                     self.episode = self.episode + 1
                     sleep(1)
                 else:
@@ -429,6 +449,7 @@ class LearningNode(Node):
                         self.first_action_taken = False
                         # init pos
                         (x_set_init, y_set_init) = getPosition(odomMsg)
+                            
                         if RANDOM_INIT_POS:
                             print('set random pos')
                             ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
@@ -437,7 +458,7 @@ class LearningNode(Node):
                             ( x_init , y_init , theta_init ) = robotSetPos(self.setPosPub, x_set_init, y_set_init, THETA_INIT)
 
                             self.prev_position = getPosition(odomMsg)
-                            self.MAX_RADIUS = np.linalg.norm([x_init - GOAL_X, y_init - GOAL_Y])
+                            self.MAX_RADIUS = np.linalg.norm([x_init - self.GOAL_X, y_init - self.GOAL_Y])
                         # _, odomMsg = self.wait_for_message('/odom', Odometry)
                         # ( x , y ) = getPosition(odomMsg)
                         
@@ -449,6 +470,7 @@ class LearningNode(Node):
                         #     #sleep(2)
                         # else:
                         #     self.robot_in_pos = False
+                        
                     # First acion
                     elif not self.first_action_taken:
                         _, odomMsg = self.wait_for_message('/odom', Odometry)               #just added
@@ -456,7 +478,7 @@ class LearningNode(Node):
                         ( lidar, angles ) = lidarScan(msgScan)                              #just added
                         
 
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (GOAL_X, GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
                         self.crash = checkCrash(lidar)
 
                         if args_parse.exploration_func == 1 :
@@ -492,7 +514,7 @@ class LearningNode(Node):
                         yaw = getRotation(odomMsg)
 
 
-                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (GOAL_X, GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                        ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (self.GOAL_X, self.GOAL_Y), (current_x, current_y),self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
                         self.crash = checkCrash(lidar)
                         
                         # radius caculated by norm of  and goal position
@@ -502,7 +524,7 @@ class LearningNode(Node):
                         ( reward, self.terminal_state, win_count) = getReward(self.action, self.prev_action, lidar, self.prev_lidar, self.crash,
                                                                    (current_x, current_y),
                                                                     # self.prev_position,
-                                                                     (GOAL_X, GOAL_Y), 
+                                                                     (self.GOAL_X, self.GOAL_Y), 
                                                                     self.MAX_RADIUS, args_parse.radiaus_reduce_rate, ep_time ,
                                                                     self.get_clock().now().nanoseconds, 
                                                                     args_parse.GOAL_RADIUS, x10, self.WIN_COUNT)
