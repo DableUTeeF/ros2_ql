@@ -73,7 +73,7 @@ GOAL_POSITION = (0., 2., .0)
 R = [-2,-1,1,2]
 
 GOAL_X = 0
-GOAL_Y = 0
+ = 0
 GOAL_RADIUS = .1
 
 # edit when chang order in def roboDoAction in Control.py  *****
@@ -430,7 +430,7 @@ class LearningNode(Node):
                         if is_rand:
                             (self.GOAL_X, self.GOAL_Y) = np.random.choice(R,2)
                             GOAL_THETA = 0
-                            print(self.GOAL_X, self.GOAL_Y)
+                            print((self.GOAL_X, self.GOAL_Y))
                         else:
                             (self.GOAL_X, self.GOAL_Y, GOAL_THETA) = tuple(args_parse.GOAL_POSITION)
                         self.save_info_csv()
