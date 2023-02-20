@@ -170,17 +170,25 @@ def getReward(  action,
     W = np.linspace(1, 1.1, len(lidar_horizon) // 2)
     W = np.append(W, np.linspace(1.1, 1, len(lidar_horizon) // 2))
     if np.sum( W * ( lidar_horizon - prev_lidar_horizon) ) >= 0:
-        reward += +0.2
+        reward += +1
     else:
-        reward += -0.2
-        
+        reward += -1
+
+
+    #too close to wall
+    lidar_horizon = np.concatenate((lidar[(ANGLE_MIN + sum(HORIZON_WIDTH[:1])):(ANGLE_MIN):-1],lidar[(ANGLE_MAX):(ANGLE_MAX - sum(HORIZON_WIDTH[:1])):-1]))
+    if min(lidar_horizon) < 0.15:
+        reward += -5
+        if min(lidar_horizon) < 0.1:
+            reward += -10
+
     # action and prev_action is same and action is left or right
     if (prev_action == 3 and action == 4) or (prev_action == 4 and action == 3):
-            reward += -5
+            reward += -1
 
     #repeat stop penelty
     if prev_action == 2 and action == 2:
-            reward += -5
+            reward += -1
 
     #reach goal
     if dist<goal_radius:
@@ -205,7 +213,7 @@ def getReward(  action,
     # calculate distance reward
     reward +=  3* (np.exp(-dist) - np.exp(-max_radius)) / (1 - np.exp(-max_radius))
 
-    return (reward, terminal_state, win_count)
+    return (reward, terminal_state, win_count,)
     
     # if crash:
     #     terminal_state = True

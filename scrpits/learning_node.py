@@ -70,7 +70,6 @@ REWARD_THRESHOLD =  -200
 CUMULATIVE_REWARD = 0.0
 
 GOAL_POSITION = (0., 2., .0)
-R = [-2,-1,1,2]
 
 GOAL_X = 0
 GOAL_Y = 0
@@ -114,8 +113,16 @@ parser.add_argument('--RANDOM_GOAL', default=0, type=int, dest="RANDOM_GOAL")
 
 args_parse = parser.parse_args()
 is_rand = args_parse.RANDOM_GOAL
+
+import random
+
 if is_rand:
-    (GOAL_X, GOAL_Y) = np.random.choice(R,2)
+    R = [-2,2]
+    (GOAL_X, GOAL_Y) = np.random.choice(R,2) #random from cartesia product of R
+    # R_new = [(2,2),(2,-2),(-2,-2)]
+    # print(R_new)
+    # GOAL_X = random.choice(R_new)[0]
+    # GOAL_Y = random.choice(R_new)[1]
     GOAL_THETA = 0
     print((GOAL_X, GOAL_Y))
 else:
@@ -437,7 +444,7 @@ class LearningNode(Node):
                         
                     
                     self.episode = self.episode + 1
-                    sleep(1)
+                    sleep(1.5)
                 else:
                     self.ep_steps = self.ep_steps + 1
 
@@ -449,7 +456,7 @@ class LearningNode(Node):
                         self.first_action_taken = False
                         # init pos
                         (x_set_init, y_set_init) = getPosition(odomMsg)
-                            
+                        
                         if RANDOM_INIT_POS:
                             print('set random pos')
                             ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
@@ -528,11 +535,13 @@ class LearningNode(Node):
                                                                     self.MAX_RADIUS, args_parse.radiaus_reduce_rate, ep_time ,
                                                                     self.get_clock().now().nanoseconds, 
                                                                     args_parse.GOAL_RADIUS, x10, self.WIN_COUNT)
-                        
+                        print(f' CURRENT_REWARD: {reward}')
                         self.CUMULATIVE_REWARD += reward
                         self.WIN_COUNT = win_count
                         print(f' CUMULATIVE_REWARD: {self.CUMULATIVE_REWARD}')
-                        print(f' WIN_COUNT: {self.WIN_COUNT}')
+                        print(f' WIN_COUNT: {self.WIN_COUNT}'+"   "+f' GOAL: {(self.GOAL_X, self.GOAL_Y)}')
+                        print(' CURRENT POSTION ({:.2f},{:.2f})'.format(current_x, current_y))
+
                         # print("time: ", self.get_clock().now().nanoseconds)
                         ( self.Q_table, status_uqt ) = updateQTable(self.Q_table, self.prev_state_ind, self.action, reward, state_ind, self.alpha, self.gamma)
 
