@@ -9,6 +9,16 @@ from std_msgs.msg import String
 
 from geometry_msgs.msg import Twist
 
+import argparse
+
+# Add args
+parser = argparse.ArgumentParser(description='control node')
+# Add gpos 
+parser.add_argument('--gpos', default = (0.0, 0.0), nargs=2, type=float, help='Enter x.x y.y pos for goal position')
+
+args = parser.parse_args()
+
+
 import sys
 cwd = os.getcwd()
 print(cwd)
@@ -51,9 +61,10 @@ if REAL_ROBOT:
     X_INIT = 0.0
     Y_INIT = 0.0
     THETA_INIT = 0.0
-    X_GOAL = 1.7
-    Y_GOAL = 1.1
+    X_GOAL = args.gpos[0]
+    Y_GOAL = args.gpos[1]
     THETA_GOAL = 90
+    GOAL_RADIUS = 0.1
 else:
     RANDOM_INIT_POS = False
 
@@ -142,8 +153,6 @@ class ControlNode(Node):
         _, odomMsg = self.wait_for_message('/odom', Odometry)
         step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
 
-        self.prev_position = (999, 999)
-
         if step_time > MIN_TIME_BETWEEN_ACTIONS:
             self.t_step = self.get_clock().now()
 
@@ -153,6 +162,8 @@ class ControlNode(Node):
                     ( x_init , y_init , theta_init ) = (0, 0, 0)
                     _, odomMsg = self.wait_for_message('/odom', Odometry)
                     ( x , y ) = getPosition(odomMsg)
+                    self.prev_position = getPosition(odomMsg)
+                    self.MAX_RADIUS = np.linalg.norm([x_init - X_GOAL, y_init - Y_GOAL])
                     theta = degrees(getRotation(odomMsg))
                     self.robot_in_pos = True
                     print('\r\nInitial position:')
@@ -160,6 +171,11 @@ class ControlNode(Node):
                     print('y = %.2f [m]' % y)
                     print('theta = %.2f [degrees]' % theta)
                     print('')
+                    print('\r\nGoal position:')
+                    print('x = %.2f [m]' % X_GOAL)
+                    print('y = %.2f [m]' % Y_GOAL)
+                    print('')
+                    input('Press Enter to start nong...')
                 else:
                     if RANDOM_INIT_POS:
                         ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
@@ -192,6 +208,7 @@ class ControlNode(Node):
                 ( lidar, angles ) = lidarScan(msgScan)
                 # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
                 ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
                 
     
                 # Check for objects nearby
@@ -226,6 +243,8 @@ class ControlNode(Node):
                 text = text + '\r\nx :       %.2f -> %.2f [m]' % (x, X_GOAL)
                 text = text + '\r\ny :       %.2f -> %.2f [m]' % (y, Y_GOAL)
                 text = text + '\r\ntheta :   %.2f -> %.2f [degrees]' % (degrees(theta), THETA_GOAL)
+
+                self.prev_position = ( x , y )
 
                 if status == 'Goal position reached!':
                     robotStop(self.velPub)

@@ -25,7 +25,7 @@ K_BETA = -3
 V_CONST = 0.1 # [m/s]
 
 # Goal reaching threshold
-GOAL_DIST_THRESHOLD = 0.1 # [m]
+GOAL_DIST_THRESHOLD = 0.05 # [m]
 GOAL_ANGLE_THRESHOLD = 15 # [degrees]
 
 # Get theta in [radians]
@@ -52,12 +52,12 @@ def getAngVel(odomMsg):
 # Create rosmsg Twist()
 def createVelMsg(v,w):
     velMsg = Twist()
-    velMsg.linear.x = v
+    velMsg.linear.x = float(v)
     velMsg.linear.y = 0.
     velMsg.linear.z = 0.
     velMsg.angular.x = 0.
     velMsg.angular.y = 0.
-    velMsg.angular.z = w
+    velMsg.angular.z = float(w)
     return velMsg
 
 # Go forward command
@@ -206,8 +206,9 @@ def robotFeedbackControl(velPub, x, y, theta, x_goal, y_goal, theta_goal):
     alpha = (lamda -  theta + np.pi) % (2 * np.pi) - np.pi
     beta = (theta_goal - lamda + np.pi) % (2 * np.pi) - np.pi
 
-    if ro < GOAL_DIST_THRESHOLD and degrees(abs(theta-theta_goal_norm)) < GOAL_ANGLE_THRESHOLD:
+    if ro < GOAL_DIST_THRESHOLD: # and degrees(abs(theta-theta_goal_norm)) < GOAL_ANGLE_THRESHOLD:
         status = 'Goal position reached!'
+        print('GOAL REACH')
         v = 0
         w = 0
         v_scal = 0
