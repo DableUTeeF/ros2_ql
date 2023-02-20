@@ -11,10 +11,13 @@ from geometry_msgs.msg import Twist
 
 import sys
 cwd = os.getcwd()
+print(cwd)
+cwd = os.path.dirname(cwd)
+print(cwd)
 
-
-DATA_PATH = 'ros2/ros2_ql/Qtable/QtableV1/Data'
-MODULES_PATH = 'ros2/ros2_ql/Qtable/QtableV1/scrpits'
+# TODO: Change to proper PATH
+DATA_PATH = os.path.join(cwd, 'Data')
+MODULES_PATH = os.path.join(cwd, 'scrpits')
 sys.path.insert(0, MODULES_PATH)
 
 from Qlearning import *
@@ -26,7 +29,6 @@ from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerGuardCondition
 from rclpy.utilities import timeout_sec_to_nsec
-
 
 # Real robot
 REAL_ROBOT = True
@@ -64,16 +66,29 @@ else:
     THETA_GOAL = GOAL_POSITIONS_THETA[PATH_IND]
 
 # Log file directory - Q table source
-Q_TABLE_SOURCE = DATA_PATH + '/Log_learning_FINAL'
+Q_TABLE_SOURCE = DATA_PATH + '/Log_learning'
+
+'''
+Add code
+'''
+# import pandas as pd
+
+# Get arguments from QTable
+# n_actions_enable = len(qt.columns)
+
 
 class ControlNode(Node):
     def __init__(self):
+        print('init...')
         super().__init__('control_node')
         self.setPosPub = self.create_publisher(ModelState, 'gazebo/set_model_state', 10)
         self.velPub = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.actions = createActions()
+        # self.actions = createActions(n_actions_enable)
         self.state_space = createStateSpace()
         self.Q_table = readQTable(Q_TABLE_SOURCE+'/Qtable.csv')
+        # print(self.Q_table.shape)
+        # n_actions_enable = Q_table.shape[1]
+        self.actions = createActions(self.Q_table.shape[1])
         self.timer_period = .5 # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.t_step = self.get_clock().now()
@@ -122,9 +137,13 @@ class ControlNode(Node):
         return (False, None)
 
     def timer_callback(self):
+        print('running...')
         _, msgScan = self.wait_for_message('/scan', LaserScan)
         _, odomMsg = self.wait_for_message('/odom', Odometry)
         step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
+
+        self.prev_position = (999, 999)
+
         if step_time > MIN_TIME_BETWEEN_ACTIONS:
             self.t_step = self.get_clock().now()
 
@@ -171,8 +190,10 @@ class ControlNode(Node):
 
                 # Get lidar scan
                 ( lidar, angles ) = lidarScan(msgScan)
-                ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
-
+                # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
+                ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                
+    
                 # Check for objects nearby
                 crash = checkCrash(lidar)
                 object_nearby = checkObjectNearby(lidar)
