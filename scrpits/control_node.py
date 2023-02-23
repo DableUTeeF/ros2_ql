@@ -9,11 +9,25 @@ from std_msgs.msg import String
 
 from geometry_msgs.msg import Twist
 
+import argparse
+
+# Add args
+parser = argparse.ArgumentParser(description='control node')
+# Add gpos 
+parser.add_argument('--gpos', default = (0.0, 0.0), nargs=2, type=float, help='Enter x.x y.y pos for goal position')
+
+args = parser.parse_args()
+
+
 import sys
 cwd = os.getcwd()
+print(cwd)
+cwd = os.path.dirname(cwd)
+print(cwd)
 
-DATA_PATH = '/home/palm/PycharmProjects/ros2_ql/Data'
-MODULES_PATH = '/home/palm/PycharmProjects/ros2_ql/scripts'
+# TODO: Change to proper PATH
+DATA_PATH = os.path.join(cwd, 'Data')
+MODULES_PATH = os.path.join(cwd, 'scrpits')
 sys.path.insert(0, MODULES_PATH)
 
 from Qlearning import *
@@ -25,7 +39,6 @@ from rclpy.impl.implementation_singleton import rclpy_implementation as _rclpy
 from rclpy.node import Node
 from rclpy.signals import SignalHandlerGuardCondition
 from rclpy.utilities import timeout_sec_to_nsec
-
 
 # Real robot
 REAL_ROBOT = True
@@ -48,9 +61,10 @@ if REAL_ROBOT:
     X_INIT = 0.0
     Y_INIT = 0.0
     THETA_INIT = 0.0
-    X_GOAL = 1.7
-    Y_GOAL = 1.1
+    X_GOAL = args.gpos[0]
+    Y_GOAL = args.gpos[1]
     THETA_GOAL = 90
+    GOAL_RADIUS = 0.1
 else:
     RANDOM_INIT_POS = False
 
@@ -63,16 +77,29 @@ else:
     THETA_GOAL = GOAL_POSITIONS_THETA[PATH_IND]
 
 # Log file directory - Q table source
-Q_TABLE_SOURCE = DATA_PATH + '/Log_learning_FINAL'
+Q_TABLE_SOURCE = DATA_PATH + '/Log_learning'
+
+'''
+Add code
+'''
+# import pandas as pd
+
+# Get arguments from QTable
+# n_actions_enable = len(qt.columns)
+
 
 class ControlNode(Node):
     def __init__(self):
+        print('init...')
         super().__init__('control_node')
         self.setPosPub = self.create_publisher(ModelState, 'gazebo/set_model_state', 10)
         self.velPub = self.create_publisher(Twist, 'cmd_vel', 10)
-        self.actions = createActions()
+        # self.actions = createActions(n_actions_enable)
         self.state_space = createStateSpace()
         self.Q_table = readQTable(Q_TABLE_SOURCE+'/Qtable.csv')
+        # print(self.Q_table.shape)
+        # n_actions_enable = Q_table.shape[1]
+        self.actions = createActions(self.Q_table.shape[1])
         self.timer_period = .5 # seconds
         self.timer = self.create_timer(self.timer_period, self.timer_callback)
         self.t_step = self.get_clock().now()
@@ -121,9 +148,11 @@ class ControlNode(Node):
         return (False, None)
 
     def timer_callback(self):
+        print('running...')
         _, msgScan = self.wait_for_message('/scan', LaserScan)
         _, odomMsg = self.wait_for_message('/odom', Odometry)
         step_time = (self.get_clock().now() - self.t_step).nanoseconds / 1e9
+
         if step_time > MIN_TIME_BETWEEN_ACTIONS:
             self.t_step = self.get_clock().now()
 
@@ -133,6 +162,8 @@ class ControlNode(Node):
                     ( x_init , y_init , theta_init ) = (0, 0, 0)
                     _, odomMsg = self.wait_for_message('/odom', Odometry)
                     ( x , y ) = getPosition(odomMsg)
+                    self.prev_position = getPosition(odomMsg)
+                    self.MAX_RADIUS = np.linalg.norm([x_init - X_GOAL, y_init - Y_GOAL])
                     theta = degrees(getRotation(odomMsg))
                     self.robot_in_pos = True
                     print('\r\nInitial position:')
@@ -140,6 +171,11 @@ class ControlNode(Node):
                     print('y = %.2f [m]' % y)
                     print('theta = %.2f [degrees]' % theta)
                     print('')
+                    print('\r\nGoal position:')
+                    print('x = %.2f [m]' % X_GOAL)
+                    print('y = %.2f [m]' % Y_GOAL)
+                    print('')
+                    input('Press Enter to start nong...')
                 else:
                     if RANDOM_INIT_POS:
                         ( x_init , y_init , theta_init ) = robotSetRandomPos(self.setPosPub)
@@ -170,8 +206,11 @@ class ControlNode(Node):
 
                 # Get lidar scan
                 ( lidar, angles ) = lidarScan(msgScan)
-                ( state_ind, x1, x2 ,x3 ,x4 ) = scanDiscretization(self.state_space, lidar)
-
+                # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7 ) = scanDiscretization(self.state_space, lidar)
+                ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9, x10 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                # ( state_ind, x1, x2, x3 , x4 , x5, x6, x7, x8, x9 ) = scanDiscretization(self.state_space, lidar, (X_GOAL, Y_GOAL), (x, y), self.prev_position, self.MAX_RADIUS, GOAL_RADIUS)
+                
+    
                 # Check for objects nearby
                 crash = checkCrash(lidar)
                 object_nearby = checkObjectNearby(lidar)
@@ -204,6 +243,8 @@ class ControlNode(Node):
                 text = text + '\r\nx :       %.2f -> %.2f [m]' % (x, X_GOAL)
                 text = text + '\r\ny :       %.2f -> %.2f [m]' % (y, Y_GOAL)
                 text = text + '\r\ntheta :   %.2f -> %.2f [degrees]' % (degrees(theta), THETA_GOAL)
+
+                self.prev_position = ( x , y )
 
                 if status == 'Goal position reached!':
                     robotStop(self.velPub)

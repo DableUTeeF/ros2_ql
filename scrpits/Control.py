@@ -10,10 +10,13 @@ import numpy as np
 from tf_transformations import euler_from_quaternion, quaternion_from_euler
 
 # Q-learning speed parameters
-CONST_LINEAR_SPEED_FORWARD = 0.08
+CONST_LINEAR_SPEED_FORWARD = 0.1
 CONST_ANGULAR_SPEED_FORWARD = 0.0
-CONST_LINEAR_SPEED_TURN = 0.06
-CONST_ANGULAR_SPEED_TURN = 0.4
+
+CONST_LINEAR_SPEED_TURN = 0.05
+
+CONST_ANGULAR_SPEED_TURN = 0.5
+CONST_ANGULAR_SPEED_CW = 0.69
 
 # Feedback control parameters
 K_RO = 2
@@ -22,7 +25,7 @@ K_BETA = -3
 V_CONST = 0.1 # [m/s]
 
 # Goal reaching threshold
-GOAL_DIST_THRESHOLD = 0.1 # [m]
+GOAL_DIST_THRESHOLD = 0.05 # [m]
 GOAL_ANGLE_THRESHOLD = 15 # [degrees]
 
 # Get theta in [radians]
@@ -49,12 +52,12 @@ def getAngVel(odomMsg):
 # Create rosmsg Twist()
 def createVelMsg(v,w):
     velMsg = Twist()
-    velMsg.linear.x = v
+    velMsg.linear.x = float(v)
     velMsg.linear.y = 0.
     velMsg.linear.z = 0.
     velMsg.angular.x = 0.
     velMsg.angular.y = 0.
-    velMsg.angular.z = w
+    velMsg.angular.z = float(w)
     return velMsg
 
 # Go forward command
@@ -62,9 +65,19 @@ def robotGoForward(velPub):
     velMsg = createVelMsg(CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
     velPub.publish(velMsg)
 
+# Go 2 x forward command
+def robotGoSuperForward(velPub):
+    velMsg = createVelMsg(2*CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velPub.publish(velMsg)
+
+# Go backward command
+def robotGoBackward(velPub):
+    velMsg = createVelMsg(-CONST_LINEAR_SPEED_FORWARD,CONST_ANGULAR_SPEED_FORWARD)
+    velPub.publish(velMsg)
+
 # Turn left command
 def robotTurnLeft(velPub):
-    velMsg = createVelMsg(CONST_LINEAR_SPEED_TURN,+CONST_ANGULAR_SPEED_TURN)
+    velMsg = createVelMsg(CONST_LINEAR_SPEED_TURN,CONST_ANGULAR_SPEED_TURN)
     velPub.publish(velMsg)
 
 # Turn right command
@@ -76,7 +89,15 @@ def robotTurnRight(velPub):
 def robotStop(velPub):
     velMsg = createVelMsg(0.0,0.0)
     velPub.publish(velMsg)
+# CW command
+def robotCW(velPub):
+    velMsg = createVelMsg(0.0, -CONST_ANGULAR_SPEED_TURN)
+    velPub.publish(velMsg)
 
+# CCW command
+def robotCCW(velPub):
+    velMsg = createVelMsg(0.0, CONST_ANGULAR_SPEED_TURN)
+    velPub.publish(velMsg)    
 # Set robot position and orientation
 def robotSetPos(setPosPub, x, y, theta):
     checkpoint = ModelState()
@@ -150,10 +171,21 @@ def robotDoAction(velPub, action):
     status = 'robotDoAction => OK'
     if action == 0:
         robotGoForward(velPub)
+    # elif action == 1:
+    #     robotTurnLeft(velPub)
+    # elif action == 2:
+    #     robotTurnRight(velPub)
+########################################
+    elif action == 4:
+        robotGoSuperForward(velPub)
+    # elif action == 4:
+    #     robotGoBackward(velPub) 
+    elif action == 3:
+        robotStop(velPub)   
     elif action == 1:
-        robotTurnLeft(velPub)
+        robotCW(velPub)
     elif action == 2:
-        robotTurnRight(velPub)
+        robotCCW(velPub)       
     else:
         status = 'robotDoAction => INVALID ACTION'
         robotGoForward(velPub)
@@ -163,19 +195,20 @@ def robotDoAction(velPub, action):
 # Feedback Control Algorithm
 def robotFeedbackControl(velPub, x, y, theta, x_goal, y_goal, theta_goal):
     # theta goal normalization
-    if theta_goal >= pi:
-        theta_goal_norm = theta_goal - 2 * pi
+    if theta_goal >= np.pi:
+        theta_goal_norm = theta_goal - 2 * np.pi
     else:
         theta_goal_norm = theta_goal
 
     ro = sqrt( pow( ( x_goal - x ) , 2 ) + pow( ( y_goal - y ) , 2) )
     lamda = atan2( y_goal - y , x_goal - x )
 
-    alpha = (lamda -  theta + pi) % (2 * pi) - pi
-    beta = (theta_goal - lamda + pi) % (2 * pi) - pi
+    alpha = (lamda -  theta + np.pi) % (2 * np.pi) - np.pi
+    beta = (theta_goal - lamda + np.pi) % (2 * np.pi) - np.pi
 
-    if ro < GOAL_DIST_THRESHOLD and degrees(abs(theta-theta_goal_norm)) < GOAL_ANGLE_THRESHOLD:
+    if ro < GOAL_DIST_THRESHOLD: # and degrees(abs(theta-theta_goal_norm)) < GOAL_ANGLE_THRESHOLD:
         status = 'Goal position reached!'
+        print('GOAL REACH')
         v = 0
         w = 0
         v_scal = 0
